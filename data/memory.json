@@ -1,15 +1,15 @@
 {
-  "totalRuns": 11,
+  "totalRuns": 12,
   "bestAnte": 4,
   "bestRound": 12,
   "bestScore": 6656,
   "topLessons": [
+    "【行动硬指令】无稳定×Mult不碰锁牌型BOSS，别裸冲顺子。",
     "前期先买筹码和+Mult，BOSS前保留未污染牌",
     "【行动硬指令】前2回合必补筹码与×Mult双引擎，杜绝单小丑硬冲BOSS盲注",
     "3底注前必配至少1张×Mult放最右，无用小丑立即卖掉。",
     "【行动硬指令】有钱先补核心xMult，禁止空栏存钱进BOSS。",
-    "【行动硬指令】满格无×Mult必卖Chaos，见×Mult就买并放最右，别囤钱。",
-    "无×Mult不进第4底注，卖Misprint也要买乘倍放最右"
+    "【行动硬指令】满格无×Mult必卖Chaos，见×Mult就买并放最右，别囤钱。"
   ],
   "bossKnowledge": {
     "The Window": "面对 The Window 时提前使用洗牌避开方片花色",
@@ -18,7 +18,8 @@
     "The Hook": "Hook每手随机弃2张，禁止跨手蓄牌；弃牌只用于开局找两对/三条，之后每手直接打最佳5张计分牌，优先三条/葫芦，别追同花顺子；有+Mult或+筹码小丑必买。",
     "The Fish": "The Fish：弃牌阶段先凑好已知顺子/同花，保留1弃牌吃Banner，首手直接爆发斩杀；不能斩杀也别连续出小牌，避免抽到背牌污染手牌。",
     "The Eye": "The Eye禁止重复牌型：提前规划高牌→对子→两对→三条→顺子/同花等不重复序列；弃牌只找下一不同牌型；小丑换成通用×Mult，别靠对子/红心条件。",
-    "The Mark": "The Mark会隐藏所有人头牌，背面J/Q/K无法确认花色，别赌Ancient；弃掉背面人头，只打可见Ancient花色的牌凑同花/两对/三条。可见花色不足时，改打可见非人头高点数对子/三条，靠Blue Joker撑筹码、Supernova吃出牌次数，商店优先买同花星球与xMult，不再死存$25。"
+    "The Mark": "The Mark会隐藏所有人头牌，背面J/Q/K无法确认花色，别赌Ancient；弃掉背面人头，只打可见Ancient花色的牌凑同花/两对/三条。可见花色不足时，改打可见非人头高点数对子/三条，靠Blue Joker撑筹码、Supernova吃出牌次数，商店优先买同花星球与xMult，不再死存$25。",
+    "The Mouth": "The Mouth只锁牌型不锁弃牌：进BOSS前选牌组最易重复的牌型（对子/三条/同花），用弃牌过滤杂牌；若坚持顺子，必须留万能牌/百搭并避免消耗手牌K，Baron要围绕K留手，否则单x1.5推不过1600。"
   },
   "history": [
     {
@@ -199,6 +200,23 @@
       "bossName": "The Pillar",
       "rootCause": "裸拿未成长的Obelisk，缺少筹码与加法倍率支撑基础分，且The Pillar已污染前期出过的牌，导致BOSS局无干净高分牌可斩杀。",
       "lesson": "前期先买筹码和+Mult，BOSS前保留未污染牌"
+    },
+    {
+      "runId": 12,
+      "timestamp": "2026-09-28T18:44:55.781Z",
+      "reachedAnte": 2,
+      "reachedRound": 6,
+      "finalMoney": 6,
+      "finalScore": 879,
+      "targetScore": 1600,
+      "jokers": [
+        "Walkie Talkie",
+        "Castle",
+        "Baron"
+      ],
+      "bossName": "The Mouth",
+      "rootCause": "病根是构筑缺乏独立×Mult：仅靠Baron手持K的x1.5且被The Mouth锁顺子消耗K，Castle未养大，Lv2顺子上限不足1600。",
+      "lesson": "【行动硬指令】无稳定×Mult不碰锁牌型BOSS，别裸冲顺子。"
     }
   ]
 }

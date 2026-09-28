@@ -14,7 +14,12 @@ export class BalatroClient {
     this.baseUrl = `http://${host}:${port}`;
   }
 
-  private async call<T = any>(method: string, params: Record<string, any> = {}): Promise<T> {
+  private async call<T = any>(
+    method: string,
+    params: Record<string, any> = {},
+    maxRetries = 3,
+    timeoutMs = 5000
+  ): Promise<T> {
     this.requestId++;
     const payload = {
       jsonrpc: '2.0',
@@ -23,29 +28,49 @@ export class BalatroClient {
       id: this.requestId,
     };
 
-    const response = await fetch(this.baseUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
+    let lastError: any;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await fetch(this.baseUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(timeoutMs),
+        });
 
-    if (!response.ok) {
-      throw new Error(`Balatro HTTP error ${response.status}: ${response.statusText}`);
+        if (!response.ok) {
+          throw new Error(`Balatro HTTP error ${response.status}: ${response.statusText}`);
+        }
+
+        const data: any = await response.json();
+        if (data.error) {
+          throw new Error(`Balatro JSON-RPC Error [${method}]: ${data.error.message || JSON.stringify(data.error)}`);
+        }
+
+        return data.result as T;
+      } catch (err: any) {
+        lastError = err;
+        // Do not retry on explicit JSON-RPC business logic errors
+        if (err.message && err.message.includes('Balatro JSON-RPC Error')) {
+          throw err;
+        }
+
+        // Retry on network/socket transport errors (fetch failed, ECONNRESET, timeout)
+        if (attempt < maxRetries) {
+          const delay = 150 * (attempt + 1);
+          await new Promise(r => setTimeout(r, delay));
+        }
+      }
     }
 
-    const data: any = await response.json();
-    if (data.error) {
-      throw new Error(`Balatro JSON-RPC Error [${method}]: ${data.error.message || JSON.stringify(data.error)}`);
-    }
-
-    return data.result as T;
+    throw lastError;
   }
 
   async health(): Promise<boolean> {
     try {
-      const res = await this.call('health');
+      const res = await this.call('health', {}, 1, 1500);
       return res?.status === 'ok';
     } catch {
       return false;

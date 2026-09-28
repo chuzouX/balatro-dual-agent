@@ -19,6 +19,8 @@ export class CooperativeConductor {
   private currentStrategy: StrategicDirective | null = null;
   private isRunning = false;
   private lastCapturedState = '';
+  private lastCashOutKey = '';
+  private cashOutAttempts = 0;
 
   constructor(client: BalatroClient) {
     this.client = client;
@@ -88,6 +90,13 @@ export class CooperativeConductor {
   }
 
   private async handleState(state: GameState): Promise<void> {
+    if (state.state !== 'ROUND_EVAL') {
+      this.cashOutAttempts = 0;
+    }
+    if (state.state === 'SELECTING_HAND') {
+      this.lastCashOutKey = '';
+    }
+
     switch (state.state) {
       case 'MENU':
         await this.handleMenu(state);
@@ -134,6 +143,8 @@ export class CooperativeConductor {
   }
 
   private async handleMenu(_state: GameState): Promise<void> {
+    this.lastCashOutKey = '';
+    this.cashOutAttempts = 0;
     console.log(pc.magenta('🎮 [Menu] 检测到主菜单，正在自动发起全新标准对局 (红牌组 + 白注难度)...'));
     await this.client.startRun('RED', 'WHITE');
     console.log(pc.green('✓ [Menu] 对局成功开启，等待进入盲注选择...'));
@@ -655,10 +666,34 @@ export class CooperativeConductor {
   }
 
   private async handleRoundEval(state: GameState): Promise<void> {
+    const roundKey = `${state.ante_num || 1}_${state.round_num || 1}`;
+
+    if (this.lastCashOutKey === roundKey) {
+      this.cashOutAttempts++;
+      // If we already commanded cashOut and Balatro is still tallying interest / playing animation,
+      // wait calmly without spamming commands or duplicate log messages
+      if (this.cashOutAttempts <= 6) {
+        await new Promise(r => setTimeout(r, 400));
+        return;
+      }
+      // If still stuck in ROUND_EVAL after ~2.4s, allow one more retry attempt
+      this.cashOutAttempts = 0;
+    }
+
+    this.lastCashOutKey = roundKey;
+    this.cashOutAttempts = 1;
+
     console.log(pc.bold(pc.green(`🎉 [Round Clear] 回合胜利！总得分: ${state.round?.chips || 0}！正在提现奖金...`)));
-    await this.client.cashOut();
-    console.log(pc.green(`✓ [Cash Out] 提现成功，进入商店阶段！`));
-    await new Promise(r => setTimeout(r, 400));
+
+    try {
+      await this.client.cashOut();
+      console.log(pc.green(`✓ [Cash Out] 提现指令已执行，等待进入商店阶段...`));
+    } catch (err: any) {
+      console.warn(pc.yellow(`⚠️ [Cash Out] 提现指令提示: ${err.message}`));
+    }
+
+    // Balatro takes ~800-1200ms to tally interest, count chips/money, and switch scene to SHOP
+    await new Promise(r => setTimeout(r, 800));
   }
 
   private async handleShop(state: GameState): Promise<void> {
@@ -745,6 +780,8 @@ export class CooperativeConductor {
   }
 
   private async handleGameOver(state: GameState): Promise<void> {
+    this.lastCashOutKey = '';
+    this.cashOutAttempts = 0;
     console.log(pc.bold(pc.red(`\n💀 [Game Over] 本轮挑战结束！`)));
     console.log(pc.yellow(`📊 战绩统计: 到达底注 ${state.ante_num} | 通关回合 ${state.round_num} | 累计金币 $${state.money}`));
 
