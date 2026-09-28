@@ -15,8 +15,8 @@ export type GameStateName =
   | 'UNKNOWN';
 
 export interface CardValue {
-  rank: string;
-  suit: string;
+  rank?: string;
+  suit?: string;
   effect?: string;
 }
 

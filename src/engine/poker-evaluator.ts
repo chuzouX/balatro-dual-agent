@@ -1,4 +1,5 @@
 import { Card, HandCandidate, PokerHandInfo } from '../types.js';
+import { BASE_HAND_STATS } from './rules.js';
 
 export const RANK_VALUES: Record<string, number> = {
   '2': 2,
@@ -39,17 +40,53 @@ export const SUIT_NAMES: Record<string, string> = {
   'D': '♦方片',
 };
 
-const BASE_HAND_STATS: Record<string, { chips: number; mult: number }> = {
-  'Straight Flush': { chips: 100, mult: 8 },
-  'Four of a Kind': { chips: 60, mult: 7 },
-  'Full House': { chips: 40, mult: 4 },
-  'Flush': { chips: 35, mult: 4 },
-  'Straight': { chips: 30, mult: 4 },
-  'Three of a Kind': { chips: 30, mult: 3 },
-  'Two Pair': { chips: 20, mult: 2 },
-  'Pair': { chips: 10, mult: 2 },
-  'High Card': { chips: 5, mult: 1 },
-};
+export interface CardModifierInfo {
+  isSteel: boolean;
+  isGlass: boolean;
+  isBonus: boolean;
+  isMult: boolean;
+  isStone: boolean;
+  isGold: boolean;
+  isLucky: boolean;
+  isWild: boolean;
+  hasRedSeal: boolean;
+  hasBlueSeal: boolean;
+  hasPurpleSeal: boolean;
+  hasGoldSeal: boolean;
+  isFoil: boolean;
+  isHolo: boolean;
+  isPoly: boolean;
+}
+
+export function getCardModifiers(card: Card): CardModifierInfo {
+  const str = (
+    JSON.stringify(card.modifier || '') +
+    ' ' +
+    JSON.stringify(card.ability || '') +
+    ' ' +
+    (card.label || '')
+  ).toUpperCase();
+
+  const mods = Array.isArray(card.modifier) ? card.modifier.map(m => String(m).toUpperCase()) : [];
+
+  return {
+    isSteel: str.includes('STEEL'),
+    isGlass: str.includes('GLASS'),
+    isBonus: str.includes('BONUS'),
+    isMult: (str.includes('M_MULT') || str.includes('MULT CARD') || mods.some(m => m.includes('MULT') && !m.includes('XMULT'))),
+    isStone: str.includes('STONE'),
+    isGold: (str.includes('M_GOLD') || str.includes('GOLD CARD') || mods.some(m => m === 'GOLD')),
+    isLucky: str.includes('LUCKY'),
+    isWild: str.includes('WILD'),
+    hasRedSeal: str.includes('RED_SEAL') || str.includes('RED SEAL') || mods.some(m => m.includes('RED')),
+    hasBlueSeal: str.includes('BLUE_SEAL') || str.includes('BLUE SEAL') || mods.some(m => m.includes('BLUE')),
+    hasPurpleSeal: str.includes('PURPLE_SEAL') || str.includes('PURPLE SEAL') || mods.some(m => m.includes('PURPLE')),
+    hasGoldSeal: str.includes('GOLD_SEAL') || str.includes('GOLD SEAL') || mods.some(m => m.includes('GOLD_SEAL')),
+    isFoil: str.includes('FOIL'),
+    isHolo: str.includes('HOLO'),
+    isPoly: str.includes('POLY'),
+  };
+}
 
 export interface EvaluatedPokerHand {
   handType: string;
@@ -62,7 +99,7 @@ export interface EvaluatedPokerHand {
 
 export class PokerEvaluator {
   /**
-   * Evaluate a specific combination of cards (up to 5 cards)
+   * Evaluate a specific combination of cards (up to 5 cards) based on Balatro 1.0.1o rules
    */
   static evaluateCombination(
     cards: Card[],
@@ -75,33 +112,48 @@ export class PokerEvaluator {
     }
 
     const rankCounts: Record<string, number> = {};
-    const suitCounts: Record<string, number> = {};
     const rankIndices: Record<string, number[]> = {};
+    const suitCounts: Record<string, number> = { S: 0, H: 0, C: 0, D: 0 };
+    let wildCount = 0;
 
     for (let i = 0; i < indices.length; i++) {
       const idx = indices[i];
       const card = cards[idx];
-      const rank = card.value?.rank || '2';
+      const mod = getCardModifiers(card);
+      const rank = mod.isStone ? 'STONE' : (card.value?.rank || '2');
       const suit = card.value?.suit || 'S';
 
+      if (mod.isWild) {
+        wildCount++;
+      } else if (!mod.isStone) {
+        suitCounts[suit] = (suitCounts[suit] || 0) + 1;
+      }
+
       rankCounts[rank] = (rankCounts[rank] || 0) + 1;
-      suitCounts[suit] = (suitCounts[suit] || 0) + 1;
       if (!rankIndices[rank]) rankIndices[rank] = [];
       rankIndices[rank].push(idx);
     }
 
-    const isFlush = selected.length === 5 && Object.values(suitCounts).some(c => c === 5);
-
-    // Check Straight (5 cards only)
-    let isStraight = false;
-    let straightRanks: number[] = [];
+    // Flush check (any suit count + wildCount >= 5)
+    let isFlush = false;
     if (selected.length === 5) {
-      const orders = selected.map(c => RANK_ORDER[c.value?.rank || '2'] || 2).sort((a, b) => a - b);
+      for (const s of ['S', 'H', 'C', 'D']) {
+        if ((suitCounts[s] + wildCount) >= 5) {
+          isFlush = true;
+          break;
+        }
+      }
+    }
+
+    // Straight check (5 cards only, ignoring stone cards)
+    let isStraight = false;
+    const nonStoneCards = selected.filter(c => !getCardModifiers(c).isStone);
+    if (nonStoneCards.length === 5) {
+      const orders = nonStoneCards.map(c => RANK_ORDER[c.value?.rank || '2'] || 2).sort((a, b) => a - b);
       const uniqueOrders = Array.from(new Set(orders));
       if (uniqueOrders.length === 5) {
         if (uniqueOrders[4] - uniqueOrders[0] === 4) {
           isStraight = true;
-          straightRanks = uniqueOrders;
         } else if (
           uniqueOrders[0] === 2 &&
           uniqueOrders[1] === 3 &&
@@ -110,16 +162,28 @@ export class PokerEvaluator {
           uniqueOrders[4] === 14 // Ace low A-2-3-4-5
         ) {
           isStraight = true;
-          straightRanks = [1, 2, 3, 4, 5];
         }
       }
     }
 
-    const counts = Object.entries(rankCounts).sort((a, b) => b[1] - a[1]);
+    const counts = Object.entries(rankCounts)
+      .filter(([r]) => r !== 'STONE')
+      .sort((a, b) => b[1] - a[1]);
+
     let handType = 'High Card';
     let scoringIndices: number[] = [];
 
-    if (isFlush && isStraight) {
+    // Balatro 1.0.1o Hand Hierarchy (Special Hands included)
+    if (selected.length === 5 && counts[0] && counts[0][1] === 5 && isFlush) {
+      handType = 'Flush Five';
+      scoringIndices = [...indices];
+    } else if (selected.length === 5 && counts[0] && counts[0][1] === 3 && counts[1] && counts[1][1] === 2 && isFlush) {
+      handType = 'Flush House';
+      scoringIndices = [...indices];
+    } else if (counts[0] && counts[0][1] >= 5) {
+      handType = 'Five of a Kind';
+      scoringIndices = rankIndices[counts[0][0]].slice(0, 5);
+    } else if (isFlush && isStraight) {
       handType = 'Straight Flush';
       scoringIndices = [...indices];
     } else if (counts[0] && counts[0][1] >= 4) {
@@ -145,28 +209,55 @@ export class PokerEvaluator {
       scoringIndices = rankIndices[counts[0][0]];
     } else {
       handType = 'High Card';
-      // Pick highest rank card
+      // Pick highest rank non-stone card or first card
       const highestCard = indices
         .map(i => ({ idx: i, val: RANK_ORDER[cards[i].value?.rank || '2'] || 0 }))
         .sort((a, b) => b.val - a.val)[0];
       scoringIndices = highestCard ? [highestCard.idx] : [];
     }
 
-    // Base hand stats
-    const base = handLevels?.[handType] || BASE_HAND_STATS[handType] || { chips: 10, mult: 1 };
+    // Base hand stats from game state or default rulebook
+    const base = handLevels?.[handType] || (BASE_HAND_STATS as any)[handType] || { chips: 10, mult: 1 };
     let handChips = base.chips;
     let handMult = base.mult;
 
-    // Card chips from SCORING cards only (standard Balatro rule)
+    // Evaluate scoring cards with Enhancements, Seals, and Editions
     let extraChips = 0;
+    let extraMult = 0;
+    let xMultProduct = 1.0;
+
     for (const idx of scoringIndices) {
       const c = cards[idx];
+      const mod = getCardModifiers(c);
       const r = c.value?.rank || '2';
-      extraChips += RANK_VALUES[r] || 2;
+
+      // Triggers count: 1 base trigger + 1 extra trigger if Red Seal
+      const triggers = mod.hasRedSeal ? 2 : 1;
+
+      for (let t = 0; t < triggers; t++) {
+        // Base rank or Stone card chips
+        if (mod.isStone) {
+          extraChips += 50;
+        } else {
+          extraChips += RANK_VALUES[r] || 2;
+        }
+
+        // Card Enhancements
+        if (mod.isBonus) extraChips += 30;
+        if (mod.isMult) extraMult += 4;
+        if (mod.isLucky) extraMult += 4; // Expected average contribution (20 * 0.2)
+        if (mod.isGlass) xMultProduct *= 2.0;
+
+        // Card Editions
+        if (mod.isFoil) extraChips += 50;
+        if (mod.isHolo) extraMult += 10;
+        if (mod.isPoly) xMultProduct *= 1.5;
+      }
     }
 
     const totalChips = handChips + extraChips;
-    const totalScore = totalChips * handMult;
+    const totalMult = Math.round((handMult + extraMult) * xMultProduct);
+    const totalScore = totalChips * totalMult;
 
     const cardsStr = indices
       .map(i => `${cards[i].value?.rank || '?'}${cards[i].value?.suit || '?'}`)
@@ -176,9 +267,9 @@ export class PokerEvaluator {
       handType,
       scoringCardIndices: scoringIndices,
       chips: totalChips,
-      mult: handMult,
+      mult: totalMult,
       totalScore,
-      description: `${handType} [${cardsStr}] (${totalChips}×${handMult} = ${totalScore}分)`,
+      description: `${handType} [${cardsStr}] (${totalChips}×${totalMult} = ${totalScore}分)`,
     };
   }
 
@@ -242,13 +333,17 @@ export class PokerEvaluator {
     // Take top 8 distinct plays
     const topPlays = evaluatedPlays.slice(0, 8);
     for (const p of topPlays) {
-      // Calculate held Steel Cards bonus (x1.5 Mult each held in hand)
+      // Calculate held cards bonus (Steel Cards in-hand x1.5 Mult each)
       const heldIndices = cards.map((_, i) => i).filter(i => !p.indices.includes(i));
       let steelCount = 0;
+      let hasBlueSealInHand = false;
+
       for (const h of heldIndices) {
-        const mod = JSON.stringify(cards[h].modifier || '').toUpperCase();
-        if (mod.includes('STEEL')) steelCount++;
+        const mod = getCardModifiers(cards[h]);
+        if (mod.isSteel) steelCount++;
+        if (mod.hasBlueSeal) hasBlueSealInHand = true;
       }
+
       const steelMultiplier = Math.pow(1.5, steelCount);
       const adjustedScore = Math.round(p.totalScore * steelMultiplier);
       const canOneShot = adjustedScore >= scoreNeeded;
@@ -260,10 +355,16 @@ export class PokerEvaluator {
       if (steelCount > 0) {
         reasonText += ` 🛡️[手持${steelCount}张钢铁卡x${steelMultiplier.toFixed(1)}]`;
       }
+      if (hasBlueSealInHand && canOneShot) {
+        reasonText += ` 🪐[手持蓝色蜡封: 终局结算自动获取专属星球牌！]`;
+      }
 
       let priority = adjustedScore + (canOneShot ? 100000 + remainingHands * 500 : 0);
       if (primaryHandType && p.handType === primaryHandType) {
-        priority += 2500; // Bonus for specializing in the primary engine hand type
+        priority += 3000; // Bonus for specializing in the primary engine hand type
+      }
+      if (hasBlueSealInHand && canOneShot) {
+        priority += 2000; // Bonus for saving Blue Seal card
       }
 
       candidates.push({
@@ -282,19 +383,42 @@ export class PokerEvaluator {
     // 2. Evaluate Discards (if discards remaining)
     if (remainingDiscards > 0) {
       const rankCounts: Record<string, number> = {};
+      const cardMods = cards.map(c => getCardModifiers(c));
+
       for (const c of cards) {
         const r = c.value?.rank || '2';
         rankCounts[r] = (rankCounts[r] || 0) + 1;
       }
       const pairedRanks = new Set(Object.keys(rankCounts).filter(r => rankCounts[r] >= 2));
 
+      // Strategy 0: Purple Seal Discard Priority (Discarding generates a FREE Tarot card!)
+      const purpleSealIndices = cards
+        .map((_, idx) => idx)
+        .filter(idx => cardMods[idx].hasPurpleSeal);
+
+      if (purpleSealIndices.length > 0) {
+        // Find other safe junk cards to discard together (up to 5 total)
+        const junkIndices = cards
+          .map((_, idx) => idx)
+          .filter(idx => !purpleSealIndices.includes(idx) && !cardMods[idx].isSteel && !cardMods[idx].hasBlueSeal && !cardMods[idx].isGlass)
+          .slice(0, 5 - purpleSealIndices.length);
+
+        const discardCombo = [...purpleSealIndices, ...junkIndices];
+        candidates.push({
+          type: 'discard',
+          cardIndices: discardCombo,
+          cardsSummary: discardCombo.map(i => `${cards[i].value?.rank || '?'}${SUIT_NAMES[cards[i].value?.suit || 'S'] || ''}`).join(' '),
+          reason: `🔮【触发紫色蜡封】弃掉紫色蜡封牌，立即免费召唤 1 张全新塔罗牌！`,
+          priorityScore: 5000,
+        });
+      }
+
       // Strategy A: Discard non-flush cards if 4 cards share a suit
-      // Or 3 cards if no strong hand and plenty of discards
       for (const [suit, indices] of Object.entries(suitGroups)) {
         if (indices.length === 4 || (indices.length === 3 && remainingDiscards >= 2 && pairedRanks.size === 0)) {
           const nonFlushIndices = cards
             .map((c, idx) => ({ c, idx }))
-            .filter(x => x.c.value?.suit !== suit && !pairedRanks.has(x.c.value?.rank || ''))
+            .filter(x => x.c.value?.suit !== suit && !pairedRanks.has(x.c.value?.rank || '') && !cardMods[x.idx].isSteel && !cardMods[x.idx].hasBlueSeal)
             .map(x => x.idx)
             .slice(0, 5);
 
@@ -310,10 +434,10 @@ export class PokerEvaluator {
         }
       }
 
-      // Strategy B: Discard lowest isolated cards (never discard pairs!)
+      // Strategy B: Discard lowest isolated junk cards (protecting pairs, steel cards, and blue seals!)
       const junkIndices = cards
-        .map((c, idx) => ({ c, idx, order: RANK_ORDER[c.value?.rank || '2'] || 0, count: rankCounts[c.value?.rank || '2'] || 1 }))
-        .filter(x => x.count === 1 && x.order <= 9) // isolated low cards
+        .map((c, idx) => ({ c, idx, order: RANK_ORDER[c.value?.rank || '2'] || 0, count: rankCounts[c.value?.rank || '2'] || 1, mod: cardMods[idx] }))
+        .filter(x => x.count === 1 && x.order <= 9 && !x.mod.isSteel && !x.mod.hasBlueSeal && !x.mod.isGold)
         .sort((a, b) => a.order - b.order)
         .map(x => x.idx)
         .slice(0, 5);

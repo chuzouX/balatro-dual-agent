@@ -51,4 +51,59 @@ candidates.slice(0, 4).forEach((c, idx) => {
   console.log(`  [候选 ${idx + 1}] (${c.type.toUpperCase()}) ${c.cardsSummary} -> ${c.reason}`);
 });
 
+// Test 4: Five of a Kind & Flush Five
+const cardsSpecial: Card[] = [
+  { id: 1, label: 'Ace of Spades', value: { rank: 'A', suit: 'S' } },
+  { id: 2, label: 'Ace of Spades', value: { rank: 'A', suit: 'S' } },
+  { id: 3, label: 'Ace of Spades', value: { rank: 'A', suit: 'S' } },
+  { id: 4, label: 'Ace of Spades', value: { rank: 'A', suit: 'S' } },
+  { id: 5, label: 'Ace of Spades', value: { rank: 'A', suit: 'S' } },
+];
+const resFlushFive = PokerEvaluator.evaluateCombination(cardsSpecial, [0, 1, 2, 3, 4]);
+console.log(pc.green(`测试 4 - 同花五条识别:`), resFlushFive.handType, `预估分数: ${resFlushFive.totalScore}`);
+if (resFlushFive.handType !== 'Flush Five') {
+  console.error(pc.red(`❌ 预期 Flush Five，实际为: ${resFlushFive.handType}`));
+} else {
+  console.log(pc.green('✓ 成功识别 Flush Five (同花五条)!'));
+}
+
+// Test 5: Enhancements (Glass x2, Red Seal) and Purple Seal Discard
+const cardsEnhanced: Card[] = [
+  { id: 1, label: 'Glass King of Hearts', value: { rank: 'K', suit: 'H' }, modifier: ['GLASS'] },
+  { id: 2, label: 'Red Seal King of Spades', value: { rank: 'K', suit: 'S' }, modifier: ['RED_SEAL'] },
+  { id: 3, label: 'Purple Seal 2 of Clubs', value: { rank: '2', suit: 'C' }, modifier: ['PURPLE_SEAL'] },
+  { id: 4, label: 'Steel 3 of Diamonds', value: { rank: '3', suit: 'D' }, modifier: ['STEEL'] },
+];
+
+const resGlass = PokerEvaluator.evaluateCombination(cardsEnhanced, [0, 1]);
+console.log(pc.green(`测试 5 - 强化牌计分(玻璃+红蜡封):`), resGlass.handType, `预估分数: ${resGlass.totalScore} (${resGlass.chips}x${resGlass.mult})`);
+
+const enhancedCandidates = PokerEvaluator.generateCandidates(cardsEnhanced, 3, 2, 500, 0);
+const purpleCandidate = enhancedCandidates.find(c => c.reason.includes('紫色蜡封'));
+if (purpleCandidate) {
+  console.log(pc.green(`✓ 成功识别并优先生成紫色蜡封白嫖塔罗候选: ${purpleCandidate.reason}`));
+} else {
+  console.error(pc.red(`❌ 未能识别紫色蜡封候选`));
+}
+
+// Test 6: JokerSorter test (Economy -> Chips -> Mult -> Retrigger -> Blueprint -> xMult)
+import { JokerSorter } from './joker-sorter.js';
+const jokersSample: Card[] = [
+  { id: 1, key: 'j_cavendish', label: 'Cavendish', value: { effect: 'x3 Mult' } },
+  { id: 2, key: 'j_blueprint', label: 'Blueprint', value: { effect: 'Copies ability to the right' } },
+  { id: 3, key: 'j_golden', label: 'Golden Joker', value: { effect: '+$4 at round end' } },
+  { id: 4, key: 'j_ice_cream', label: 'Ice Cream', value: { effect: '+100 Chips' } },
+  { id: 5, key: 'j_hanging_chad', label: 'Hanging Chad', value: { effect: 'Retrigger first played card 2 times' } },
+];
+
+const sortResult = JokerSorter.getOptimalOrder(jokersSample);
+console.log(pc.green(`测试 6 - 小丑排序算法:`), sortResult.description);
+console.log(`重排需求: ${sortResult.needsRearrange ? '需重排' : '已最优'}, 顺序索引: [${sortResult.newOrder.join(', ')}]`);
+// Expected order: Golden Joker (idx 2) -> Ice Cream (idx 3) -> Hanging Chad (idx 4) -> Blueprint (idx 1) -> Cavendish (idx 0)
+if (sortResult.newOrder[sortResult.newOrder.length - 1] === 0 && sortResult.newOrder[sortResult.newOrder.length - 2] === 1) {
+  console.log(pc.green('✓ 成功将 Blueprint 精确对齐到最强乘倍牌 Cavendish 左侧，并将 Cavendish 置于最右端！'));
+} else {
+  console.error(pc.red(`❌ 排序结果不符合预期: [${sortResult.newOrder.join(', ')}]`));
+}
+
 console.log(pc.bold(pc.green('\n🎉 评估引擎自检全部通过！\n')));

@@ -1,7 +1,7 @@
 import { BalatroClient } from '../driver/balatro-client.js';
 import { DeepSeekAgent } from './deepseek-agent.js';
 import { JevAgent } from './jev-agent.js';
-import { PokerEvaluator, SUIT_NAMES } from './poker-evaluator.js';
+import { PokerEvaluator, SUIT_NAMES, getCardModifiers, RANK_ORDER } from './poker-evaluator.js';
 import { JokerSorter } from './joker-sorter.js';
 import { GameState, StrategicDirective } from '../types.js';
 import { MemoryManager } from './memory-manager.js';
@@ -174,22 +174,91 @@ export class CooperativeConductor {
   }
 
   /**
-   * Check and automatically use advantageous consumables (Planet cards, Tarot cards, etc.)
+   * Check and automatically use advantageous consumables (Planet cards, Tarot cards, Spectral cards)
    */
   private async checkAndUseConsumables(state: GameState, phase: 'SHOP' | 'SELECTING_HAND'): Promise<boolean> {
     const consumables = state.consumables || (state as any).consumeables;
     if (!consumables?.cards || consumables.cards.length === 0) return false;
+
+    const jokersCount = state.jokers?.count || 0;
+    const jokersLimit = state.jokers?.limit || 5;
+    const consCount = consumables?.cards?.length || 0;
+    const consLimit = consumables?.limit || 2;
 
     for (let i = 0; i < consumables.cards.length; i++) {
       const c = consumables.cards[i];
       const key = (c.key || c.label || '').toLowerCase();
       const set = (c.set || '').toLowerCase();
 
-      // 1. Planet Cards: ALWAYS USE IMMEDIATELY (in both SHOP and SELECTING_HAND)
-      const isPlanet = set === 'planet' || key.startsWith('c_jupiter') || key.startsWith('c_earth') ||
-        key.startsWith('c_saturn') || key.startsWith('c_venus') || key.startsWith('c_mercury') ||
-        key.startsWith('c_uranus') || key.startsWith('c_mars') || key.startsWith('c_pluto') ||
-        key.startsWith('c_neptune') || PLANET_HAND_MAP[c.label || ''] !== undefined;
+      // ─────────────────────────────────────────────────────────────
+      // 1. Spectral Cards (Instant & Safe Triggers in SHOP & SELECTING_HAND)
+      // ─────────────────────────────────────────────────────────────
+      // Black Hole: Upgrades ALL poker hands by +1! (God tier, use instantly!)
+      if (key.includes('black_hole') || key.includes('black hole')) {
+        console.log(pc.bold(pc.magenta(`🌌 [使用幻灵卡] 立即使用黑洞 [Black Hole]！全部 12 种牌型等级永久 +1！`)));
+        try {
+          await this.client.use(i);
+          await new Promise(r => setTimeout(r, 1200));
+          return true;
+        } catch (e: any) {
+          console.warn(pc.yellow(`[Spectral] 使用黑洞失败: ${e.message}`));
+        }
+      }
+
+      // The Soul: Creates a Legendary Joker!
+      if (key.includes('soul')) {
+        if (jokersCount < jokersLimit) {
+          console.log(pc.bold(pc.magenta(`✨ [使用幻灵卡] 立即使用灵魂 [The Soul]！免费召唤传奇稀有小丑！`)));
+          try {
+            await this.client.use(i);
+            await new Promise(r => setTimeout(r, 1200));
+            return true;
+          } catch {}
+        }
+      }
+
+      // Ankh: Copies 1 random Joker, destroys all others.
+      // SAFE ONLY WHEN jokersCount === 1!
+      if (key.includes('ankh')) {
+        if (jokersCount === 1 && jokersLimit >= 2) {
+          console.log(pc.bold(pc.yellow(`⚓ [使用幻灵卡] 独苗复制！使用铁锚 [Ankh] 完美复制唯一核心小丑且零损耗！`)));
+          try {
+            await this.client.use(i);
+            await new Promise(r => setTimeout(r, 1200));
+            return true;
+          } catch {}
+        }
+      }
+
+      // Hex: Adds Polychrome (x1.5 Mult) to random Joker, destroys all others.
+      // SAFE ONLY WHEN jokersCount === 1!
+      if (key.includes('hex')) {
+        if (jokersCount === 1) {
+          console.log(pc.bold(pc.yellow(`🔮 [使用幻灵卡] 单卡镀彩！使用妖术 [Hex] 为唯一核心小丑附加双色(x1.5 Mult)！`)));
+          try {
+            await this.client.use(i);
+            await new Promise(r => setTimeout(r, 1200));
+            return true;
+          } catch {}
+        }
+      }
+
+      // Wraith: Creates random Rare Joker, sets money to $0.
+      if (key.includes('wraith')) {
+        if (state.money <= 4 && jokersCount < jokersLimit) {
+          console.log(pc.bold(pc.yellow(`👻 [使用幻灵卡] 资金见底破局！使用死灵 [Wraith] 免费抽取强力稀有小丑！`)));
+          try {
+            await this.client.use(i);
+            await new Promise(r => setTimeout(r, 1200));
+            return true;
+          } catch {}
+        }
+      }
+
+      // ─────────────────────────────────────────────────────────────
+      // 2. Planet Cards: ALWAYS USE IMMEDIATELY (both SHOP and SELECTING_HAND)
+      // ─────────────────────────────────────────────────────────────
+      const isPlanet = set === 'planet' || PLANET_HAND_MAP[c.key || ''] !== undefined || PLANET_HAND_MAP[c.label || ''] !== undefined;
 
       if (isPlanet) {
         const handName = PLANET_HAND_MAP[c.key || ''] || PLANET_HAND_MAP[c.label || ''] || '专属牌型';
@@ -203,7 +272,9 @@ export class CooperativeConductor {
         }
       }
 
-      // 2. Direct Tarot Cards (no target required)
+      // ─────────────────────────────────────────────────────────────
+      // 3. Direct Tarot Cards (no target required)
+      // ─────────────────────────────────────────────────────────────
       if (key.includes('hermit')) {
         console.log(pc.bold(pc.yellow(`💰 [使用道具] 使用塔罗牌 [The Hermit]，金币翻倍！`)));
         try {
@@ -223,7 +294,7 @@ export class CooperativeConductor {
       }
 
       if (key.includes('high_priestess') || key.includes('high priestess')) {
-        if ((consumables?.cards?.length || 0) < (consumables?.limit || 2)) {
+        if (consCount < consLimit) {
           console.log(pc.bold(pc.cyan(`🪐 [使用道具] 使用塔罗牌 [The High Priestess]，召唤 2 张随机星球牌！`)));
           try {
             await this.client.use(i);
@@ -234,7 +305,7 @@ export class CooperativeConductor {
       }
 
       if (key.includes('emperor')) {
-        if ((consumables?.cards?.length || 0) < (consumables?.limit || 2)) {
+        if (consCount < consLimit) {
           console.log(pc.bold(pc.cyan(`📜 [使用道具] 使用塔罗牌 [The Emperor]，召唤 2 张随机塔罗牌！`)));
           try {
             await this.client.use(i);
@@ -245,7 +316,7 @@ export class CooperativeConductor {
       }
 
       if (key.includes('fool')) {
-        if ((consumables?.cards?.length || 0) < (consumables?.limit || 2)) {
+        if (consCount < consLimit) {
           console.log(pc.bold(pc.cyan(`🃏 [使用道具] 使用塔罗牌 [The Fool]，复制上一张使用的强力消耗卡！`)));
           try {
             await this.client.use(i);
@@ -256,7 +327,7 @@ export class CooperativeConductor {
       }
 
       if (key.includes('judgement') || key.includes('judgment')) {
-        if ((state.jokers?.count || 0) < (state.jokers?.limit || 5)) {
+        if (jokersCount < jokersLimit) {
           console.log(pc.bold(pc.cyan(`🃏 [使用道具] 使用塔罗牌 [Judgment]，免费召唤一张小丑牌！`)));
           try {
             await this.client.use(i);
@@ -267,7 +338,7 @@ export class CooperativeConductor {
       }
 
       if (key.includes('wheel_of_fortune') || key.includes('wheel of fortune')) {
-        if ((state.jokers?.count || 0) > 0) {
+        if (jokersCount > 0) {
           console.log(pc.bold(pc.cyan(`🎡 [使用道具] 使用塔罗牌 [Wheel of Fortune]，尝试为小丑牌镀金！`)));
           try {
             await this.client.use(i);
@@ -277,14 +348,110 @@ export class CooperativeConductor {
         }
       }
 
-      // 3. Target-based Tarot Cards (valid in SELECTING_HAND when hand cards exist)
+      // ─────────────────────────────────────────────────────────────
+      // 4. Target-based Spectrals & Tarots (in SELECTING_HAND with hand cards)
+      // ─────────────────────────────────────────────────────────────
       if (phase === 'SELECTING_HAND' && state.hand?.cards?.length) {
         const handCards = state.hand.cards;
+        const sortedIndices = handCards
+          .map((card, idx) => ({ idx, order: RANK_ORDER[card.value?.rank || '2'] || 0, mod: getCardModifiers(card) }))
+          .sort((a, b) => b.order - a.order);
 
+        const highestIdx = sortedIndices[0].idx;
+        const lowestIdx = sortedIndices[sortedIndices.length - 1].idx;
+
+        // Immolate: Destroys 5 random cards, gives $20
+        if (key.includes('immolate') && handCards.length >= 5 && (state.ante_num || 1) <= 6) {
+          console.log(pc.bold(pc.red(`🔥 [使用幻灵卡] 使用献祭 [Immolate]！精简手牌并立刻获取 $20 巨款！`)));
+          try {
+            await this.client.use(i);
+            await new Promise(r => setTimeout(r, 1200));
+            return true;
+          } catch {}
+        }
+
+        // Deja Vu: Red Seal (retrigger) to highest card
+        if (key.includes('deja_vu') || key.includes('deja vu')) {
+          console.log(pc.bold(pc.magenta(`🔴 [使用幻灵卡] 使用既视感 [Deja Vu]，为最高点牌附加红色蜡封(重复计分)！`)));
+          try {
+            await this.client.use(i, [highestIdx]);
+            await new Promise(r => setTimeout(r, 1200));
+            return true;
+          } catch {}
+        }
+
+        // Trance: Blue Seal (creates Planet) to a card
+        if (key.includes('trance')) {
+          console.log(pc.bold(pc.cyan(`🔵 [使用幻灵卡] 使用恍惚 [Trance]，附加蓝色蜡封(留手自造专属星球牌)！`)));
+          try {
+            await this.client.use(i, [lowestIdx]);
+            await new Promise(r => setTimeout(r, 1200));
+            return true;
+          } catch {}
+        }
+
+        // Medium: Purple Seal (creates Tarot on discard) to lowest junk card
+        if (key.includes('medium')) {
+          console.log(pc.bold(pc.magenta(`🟣 [使用幻灵卡] 使用通灵 [Medium]，为杂牌附加紫色蜡封(弃牌白嫖塔罗牌)！`)));
+          try {
+            await this.client.use(i, [lowestIdx]);
+            await new Promise(r => setTimeout(r, 1200));
+            return true;
+          } catch {}
+        }
+
+        // Talisman: Gold Seal (+$3 on scoring)
+        if (key.includes('talisman')) {
+          console.log(pc.bold(pc.yellow(`🟡 [使用幻灵卡] 使用护身符 [Talisman]，为核心牌附加金色蜡封(计分+$3)！`)));
+          try {
+            await this.client.use(i, [highestIdx]);
+            await new Promise(r => setTimeout(r, 1200));
+            return true;
+          } catch {}
+        }
+
+        // Aura: Foil, Holo, or Polychrome to 1 card
+        if (key.includes('aura')) {
+          console.log(pc.bold(pc.magenta(`🌈 [使用幻灵卡] 使用灵气 [Aura]，为最高点牌镀上闪箔/镭射/双色！`)));
+          try {
+            await this.client.use(i, [highestIdx]);
+            await new Promise(r => setTimeout(r, 1200));
+            return true;
+          } catch {}
+        }
+
+        // Cryptid: Create 2 copies of 1 card
+        if (key.includes('cryptid')) {
+          const steelCard = sortedIndices.find(x => x.mod.isSteel);
+          const glassCard = sortedIndices.find(x => x.mod.isGlass);
+          const bestCopyIdx = steelCard ? steelCard.idx : (glassCard ? glassCard.idx : highestIdx);
+          console.log(pc.bold(pc.magenta(`👥 [使用幻灵卡] 使用密室 [Cryptid]，复制 2 张最强核心牌放入卡组！`)));
+          try {
+            await this.client.use(i, [bestCopyIdx]);
+            await new Promise(r => setTimeout(r, 1200));
+            return true;
+          } catch {}
+        }
+
+        // Death: Converts left card into right card!
+        if (key.includes('death')) {
+          const targetJunk = lowestIdx;
+          const targetHero = highestIdx;
+          if (targetJunk !== targetHero) {
+            console.log(pc.bold(pc.red(`💀 [使用道具] 使用塔罗牌 [Death]，将杂牌转化为高点数/强化牌副本！`)));
+            try {
+              await this.client.use(i, [targetJunk, targetHero]);
+              await new Promise(r => setTimeout(r, 1200));
+              return true;
+            } catch {}
+          }
+        }
+
+        // The Devil: Gold Card
         if (key.includes('devil')) {
-          const target = handCards.findIndex(cd => !cd.modifier || cd.modifier.length === 0);
+          const target = handCards.findIndex(cd => !getCardModifiers(cd).isGold);
           const targetIdx = target >= 0 ? target : 0;
-          console.log(pc.bold(pc.yellow(`✨ [使用道具] 使用塔罗牌 [The Devil]，将手牌 [${handCards[targetIdx].value?.rank || '?'}] 强化为黄金卡！`)));
+          console.log(pc.bold(pc.yellow(`✨ [使用道具] 使用塔罗牌 [The Devil]，强化黄金卡！`)));
           try {
             await this.client.use(i, [targetIdx]);
             await new Promise(r => setTimeout(r, 1200));
@@ -292,9 +459,10 @@ export class CooperativeConductor {
           } catch {}
         }
 
+        // The Empress: Mult (+4 Mult)
         if (key.includes('empress')) {
-          const targets = [0, 1].filter(idx => idx < handCards.length);
-          console.log(pc.bold(pc.green(`✨ [使用道具] 使用塔罗牌 [The Empress]，将 2 张手牌强化为倍率卡(+4 Mult)！`)));
+          const targets = sortedIndices.slice(0, 2).map(x => x.idx);
+          console.log(pc.bold(pc.green(`✨ [使用道具] 使用塔罗牌 [The Empress]，强化 2 张倍率卡(+4 Mult)！`)));
           try {
             await this.client.use(i, targets);
             await new Promise(r => setTimeout(r, 1200));
@@ -302,9 +470,10 @@ export class CooperativeConductor {
           } catch {}
         }
 
+        // The Hierophant: Bonus (+30 Chips)
         if (key.includes('hierophant')) {
-          const targets = [0, 1].filter(idx => idx < handCards.length);
-          console.log(pc.bold(pc.blue(`✨ [使用道具] 使用塔罗牌 [The Hierophant]，将 2 张手牌强化为筹码卡(+30 Chips)！`)));
+          const targets = sortedIndices.slice(0, 2).map(x => x.idx);
+          console.log(pc.bold(pc.blue(`✨ [使用道具] 使用塔罗牌 [The Hierophant]，强化 2 张筹码卡(+30 Chips)！`)));
           try {
             await this.client.use(i, targets);
             await new Promise(r => setTimeout(r, 1200));
@@ -312,17 +481,19 @@ export class CooperativeConductor {
           } catch {}
         }
 
+        // The Chariot: Steel (x1.5 Mult in hand)
         if (key.includes('chariot')) {
           console.log(pc.bold(pc.cyan(`🛡️ [使用道具] 使用塔罗牌 [The Chariot]，强化钢铁卡 (手持提供 x1.5 Mult)！`)));
           try {
-            await this.client.use(i, [handCards.length - 1]);
+            await this.client.use(i, [lowestIdx]);
             await new Promise(r => setTimeout(r, 1200));
             return true;
           } catch {}
         }
 
+        // The Magician: Lucky Card
         if (key.includes('magician')) {
-          const targets = [0, 1].filter(idx => idx < handCards.length);
+          const targets = sortedIndices.slice(0, 2).map(x => x.idx);
           console.log(pc.bold(pc.cyan(`🍀 [使用道具] 使用塔罗牌 [The Magician]，强化 2 张幸运卡！`)));
           try {
             await this.client.use(i, targets);
@@ -331,46 +502,50 @@ export class CooperativeConductor {
           } catch {}
         }
 
+        // Justice: Glass Card (x2 Mult)
         if (key.includes('justice')) {
           console.log(pc.bold(pc.cyan(`💎 [使用道具] 使用塔罗牌 [Justice]，强化玻璃卡 (x2 Mult)！`)));
           try {
-            await this.client.use(i, [0]);
+            await this.client.use(i, [highestIdx]);
             await new Promise(r => setTimeout(r, 1200));
             return true;
           } catch {}
         }
 
+        // The Lovers: Wild Card
         if (key.includes('lovers')) {
           console.log(pc.bold(pc.magenta(`❤️ [使用道具] 使用塔罗牌 [The Lovers]，将手牌强化为万能百搭卡！`)));
           try {
-            await this.client.use(i, [0]);
+            await this.client.use(i, [highestIdx]);
             await new Promise(r => setTimeout(r, 1200));
             return true;
           } catch {}
         }
 
+        // The Tower: Stone Card (+50 Chips)
         if (key.includes('tower')) {
           console.log(pc.bold(pc.dim(`🗿 [使用道具] 使用塔罗牌 [The Tower]，将低点废牌转化为石头卡(+50 Chips)！`)));
           try {
-            await this.client.use(i, [handCards.length - 1]);
+            await this.client.use(i, [lowestIdx]);
             await new Promise(r => setTimeout(r, 1200));
             return true;
           } catch {}
         }
 
+        // Strength: Rank +1
         if (key.includes('strength')) {
-          const targets = [0, 1].filter(idx => idx < handCards.length);
+          const targets = sortedIndices.filter(x => x.order < 14).slice(0, 2).map(x => x.idx);
           console.log(pc.bold(pc.yellow(`💪 [使用道具] 使用塔罗牌 [Strength]，手牌点数+1！`)));
           try {
-            await this.client.use(i, targets);
+            await this.client.use(i, targets.length > 0 ? targets : [highestIdx]);
             await new Promise(r => setTimeout(r, 1200));
             return true;
           } catch {}
         }
 
+        // The Hanged Man: Destroy 2 lowest junk cards
         if (key.includes('hanged_man') || key.includes('hanged man')) {
-          // Destroy lowest 2 cards to thin deck
-          const targets = [handCards.length - 2, handCards.length - 1].filter(idx => idx >= 0);
+          const targets = sortedIndices.slice(-2).map(x => x.idx);
           console.log(pc.bold(pc.red(`🗑️ [使用道具] 使用塔罗牌 [The Hanged Man]，撕毁 2 张低点杂牌精简牌组！`)));
           try {
             await this.client.use(i, targets);
@@ -379,7 +554,7 @@ export class CooperativeConductor {
           } catch {}
         }
 
-        // Suit changers: Star (Diamonds), Moon (Clubs), Sun (Hearts), World (Spades)
+        // Suit Changers: Star (Diamonds), Moon (Clubs), Sun (Hearts), World (Spades)
         if (key.includes('star') || key.includes('moon') || key.includes('sun') || key.includes('world')) {
           const targets = [0, 1, 2].filter(idx => idx < handCards.length);
           console.log(pc.bold(pc.magenta(`🎨 [使用道具] 使用花色转换塔罗牌，统一手牌花色冲刺同花！`)));

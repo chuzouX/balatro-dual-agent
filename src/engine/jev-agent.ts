@@ -242,10 +242,22 @@ export class JevAgent {
         }
       } else if (isConsumable) {
         const cKey = (c.key || c.label || '').toLowerCase();
-        if (cKey.includes('hanged_man') || cKey.includes('hanged man')) {
+        if (cKey.includes('black_hole') || cKey.includes('black hole')) {
+          desc += ` 🌌【神级幻灵牌黑洞: 全局所有12种牌型全部永久+1级，无脑必买！】`;
+        } else if (cKey.includes('soul')) {
+          desc += ` 👑【传奇神卡灵魂: 免费召唤传奇级小丑牌，无脑必买！】`;
+        } else if (cKey.includes('immolate')) {
+          desc += ` 🔥【献祭: 撕毁5张杂牌并立领 $20 巨款】`;
+        } else if (cKey.includes('cryptid')) {
+          desc += ` 👥【密室: 复制 2 张最强核心牌】`;
+        } else if (cKey.includes('aura') || cKey.includes('deja_vu') || cKey.includes('medium') || cKey.includes('trance')) {
+          desc += ` ✨【强力幻灵牌: 极品蜡封/版本增益】`;
+        } else if (cKey.includes('hanged_man') || cKey.includes('hanged man')) {
           desc += ` ✂️【核心瘦牌神卡: 永久撕毁低点杂牌精简牌库】`;
         } else if (cKey.includes('chariot')) {
           desc += ` 🛡️【战车: 强化手持钢铁卡(x1.5 Mult爆分引擎)】`;
+        } else if (cKey.includes('justice')) {
+          desc += ` 💎【正义: 强化玻璃卡(x2 Mult爆发)】`;
         } else if (cKey.includes('devil')) {
           desc += ` 💰【恶魔: 强化黄金卡持续吃利息】`;
         } else if (cKey.includes('hermit') || cKey.includes('temperance')) {
@@ -271,7 +283,7 @@ export class JevAgent {
       });
     }
 
-    // Buy Packs (especially Buffoon / Celestial / Standard)
+    // Buy Packs (especially Buffoon / Celestial / Spectral / Standard)
     for (let i = 0; i < shopPacks.length; i++) {
       const p = shopPacks[i];
       const price = p.cost?.buy ?? 4;
@@ -283,9 +295,12 @@ export class JevAgent {
         continue;
       }
 
+      const isSpectral = (p.key && p.key.toLowerCase().includes('spectral')) || (p.label && p.label.toLowerCase().includes('spectral'));
       let desc = `选购补充包 [${p.label || p.key}] (花费: $${price})`;
       if (isBuffoon) {
         desc += ` 🃏【小丑补充包: 极高价值必选】`;
+      } else if (isSpectral) {
+        desc += ` 👻【幻灵卡包: 高风险极高回报，改造牌库/传奇小丑】`;
       } else if ((p.key && p.key.toLowerCase().includes('celestial')) || (p.label && p.label.toLowerCase().includes('celestial'))) {
         desc += ` 🪐【星球包: 永久升级主力牌型】`;
       }
