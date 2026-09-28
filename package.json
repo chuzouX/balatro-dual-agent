@@ -1,0 +1,36 @@
+{
+  "name": "balatro-dual-agent",
+  "version": "1.0.0",
+  "description": "Autonomous Balatro AI Agent powered by DeepSeek (System 2 Strategy) and Jev (System 1 Tactics)",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "play": "tsx src/index.ts",
+    "test:api": "tsx src/test-api.ts",
+    "test:hand": "tsx src/engine/test-hand.ts",
+    "test:network": "tsx src/test-proxy.ts"
+  },
+  "keywords": [
+    "balatro",
+    "deepseek",
+    "jev",
+    "typesafe-ai",
+    "ai-agent",
+    "bot"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@typesafe-ai/sdk": "^0.6.0",
+    "dotenv": "^18.0.4",
+    "openai": "^4.86.1",
+    "picocolors": "^1.1.1",
+    "undici": "^8.11.2"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

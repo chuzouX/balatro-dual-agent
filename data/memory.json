@@ -1,0 +1,156 @@
+{
+  "totalRuns": 8,
+  "bestAnte": 4,
+  "bestRound": 12,
+  "bestScore": 6656,
+  "topLessons": [
+    "【行动硬指令】有钱先补核心xMult，禁止空栏存钱进BOSS。",
+    "【行动硬指令】满格无×Mult必卖Chaos，见×Mult就买并放最右，别囤钱。",
+    "无×Mult不进第4底注，卖Misprint也要买乘倍放最右",
+    "【行动硬指令】前期宁可少1利息也要买小丑，空场进BOSS必死",
+    "【行动硬指令】底注2前必买×Mult，勿为利息拖死输出。",
+    "【严守 $25 利息线】非紧急关头不得将金币花至 $5 以下！"
+  ],
+  "bossKnowledge": {
+    "The Window": "面对 The Window 时提前使用洗牌避开方片花色",
+    "The Psychic": "强制必须打满 5 张牌才计分：若手牌只有对子或三条，必须垫入低点数废牌凑齐 5 张打出！",
+    "The Needle": "只有 1 次出牌机会：出牌前用光全部弃牌调整手牌，打出最高单次爆发！",
+    "The Pillar": "打The Pillar前本底注别打主力牌/花色，预留全新花色同花，并提前备好×Mult与星球升级；若核心牌已被削弱，立即换未污染花色或牌型破局。",
+    "The Hook": "Hook每手随机弃2张，禁止跨手蓄牌；弃牌只用于开局找两对/三条，之后每手直接打最佳5张计分牌，优先三条/葫芦，别追同花顺子；有+Mult或+筹码小丑必买。",
+    "The Fish": "The Fish：首手前用光弃牌找两对/三条并触发Mystic Summit，首手打最高爆发；暗牌阶段只打已确认牌，不依赖新抽牌。",
+    "The Eye": "The Eye禁止重复牌型：提前规划高牌→对子→两对→三条→顺子/同花等不重复序列；弃牌只找下一不同牌型；小丑换成通用×Mult，别靠对子/红心条件。",
+    "The Mark": "The Mark会隐藏所有人头牌，背面J/Q/K无法确认花色，别赌Ancient；弃掉背面人头，只打可见Ancient花色的牌凑同花/两对/三条。可见花色不足时，改打可见非人头高点数对子/三条，靠Blue Joker撑筹码、Supernova吃出牌次数，商店优先买同花星球与xMult，不再死存$25。"
+  },
+  "history": [
+    {
+      "runId": 1,
+      "timestamp": "2026-09-28T17:01:14.306Z",
+      "reachedAnte": 2,
+      "reachedRound": 4,
+      "finalMoney": 8,
+      "finalScore": 488,
+      "targetScore": 800,
+      "jokers": [
+        "Golden Joker"
+      ],
+      "bossName": "The Window",
+      "rootCause": "过早在商店刷新花光金币，导致失去每轮 $5 利息并买不起强力小丑",
+      "lesson": "【严守 $25 利息线】非紧急关头不得将金币花至 $5 以下！"
+    },
+    {
+      "runId": 2,
+      "timestamp": "2026-09-28T17:02:40.476Z",
+      "reachedAnte": 2,
+      "reachedRound": 4,
+      "finalMoney": 8,
+      "finalScore": 488,
+      "targetScore": 800,
+      "jokers": [
+        "Golden Joker"
+      ],
+      "bossName": "The Window",
+      "rootCause": "过早在商店刷新花光金币，导致失去每轮 $5 利息并买不起强力小丑",
+      "lesson": "【严守 $25 利息线】非紧急关头不得将金币花至 $5 以下！"
+    },
+    {
+      "runId": 3,
+      "timestamp": "2026-09-28T17:08:59.776Z",
+      "reachedAnte": 2,
+      "reachedRound": 6,
+      "finalMoney": 16,
+      "finalScore": 1118,
+      "targetScore": 1600,
+      "jokers": [
+        "Runner",
+        "Greedy Joker",
+        "Faceless Joker"
+      ],
+      "bossName": "The Pillar",
+      "rootCause": "死守$16利息未转化为×Mult与Pillar备用牌，导致BOSS输出缺口482。",
+      "lesson": "【行动硬指令】底注2前必买×Mult，勿为利息拖死输出。"
+    },
+    {
+      "runId": 4,
+      "timestamp": "2026-09-28T17:11:09.883Z",
+      "reachedAnte": 1,
+      "reachedRound": 2,
+      "finalMoney": 5,
+      "finalScore": 288,
+      "targetScore": 600,
+      "jokers": [],
+      "bossName": "The Hook",
+      "rootCause": "为吃$5利息而零小丑进BOSS，基础牌型数值不足，且未针对The Hook的随机弃牌调整出牌节奏。",
+      "lesson": "【行动硬指令】前期宁可少1利息也要买小丑，空场进BOSS必死"
+    },
+    {
+      "runId": 5,
+      "timestamp": "2026-09-28T17:25:16.364Z",
+      "reachedAnte": 2,
+      "reachedRound": 4,
+      "finalMoney": 8,
+      "finalScore": 488,
+      "targetScore": 800,
+      "jokers": [
+        "Golden Joker"
+      ],
+      "bossName": "The Window",
+      "rootCause": "过早在商店刷新花光金币，导致失去每轮 $5 利息并买不起强力小丑",
+      "lesson": "【严守 $25 利息线】非紧急关头不得将金币花至 $5 以下！"
+    },
+    {
+      "runId": 6,
+      "timestamp": "2026-09-28T17:33:23.307Z",
+      "reachedAnte": 4,
+      "reachedRound": 11,
+      "finalMoney": 10,
+      "finalScore": 5895,
+      "targetScore": 10000,
+      "jokers": [
+        "Drunkard",
+        "Clever Joker",
+        "Mystic Summit",
+        "Misprint",
+        "Ice Cream"
+      ],
+      "bossName": "The Fish",
+      "rootCause": "第4底注仍无任何×倍率小丑，仅靠加筹码/加算倍率，面对10000目标数值断档；The Fish暗抽又降低成牌稳定性。",
+      "lesson": "无×Mult不进第4底注，卖Misprint也要买乘倍放最右"
+    },
+    {
+      "runId": 7,
+      "timestamp": "2026-09-28T17:53:13.945Z",
+      "reachedAnte": 4,
+      "reachedRound": 11,
+      "finalMoney": 68,
+      "finalScore": 6656,
+      "targetScore": 10000,
+      "jokers": [
+        "Blue Joker",
+        "Jolly Joker",
+        "Odd Todd",
+        "Lusty Joker",
+        "Chaos the Clown"
+      ],
+      "bossName": "The Eye",
+      "rootCause": "经济充足却未执行卖Chaos换×Mult，5个小丑全是加法/条件倍率，第4底注无乘倍导致上限不足，且BOSS禁止重复牌型进一步暴露构筑僵化。",
+      "lesson": "【行动硬指令】满格无×Mult必卖Chaos，见×Mult就买并放最右，别囤钱。"
+    },
+    {
+      "runId": 8,
+      "timestamp": "2026-09-28T18:05:10.389Z",
+      "reachedAnte": 4,
+      "reachedRound": 12,
+      "finalMoney": 24,
+      "finalScore": 5680,
+      "targetScore": 10000,
+      "jokers": [
+        "Blue Joker",
+        "Supernova",
+        "Ancient Joker"
+      ],
+      "bossName": "The Mark",
+      "rootCause": "经济未转化为战斗力：3/5小丑栏还握$24，却只有Ancient Joker一张条件xMult，且The Mark隐藏人头牌令其花色触发极不稳定，最终筹码与倍率不足4320。",
+      "lesson": "【行动硬指令】有钱先补核心xMult，禁止空栏存钱进BOSS。"
+    }
+  ]
+}
