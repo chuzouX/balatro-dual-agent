@@ -15,7 +15,7 @@ export const config = {
 
   autoLaunchGame: process.env.AUTO_LAUNCH_GAME !== 'false',
   headless: process.env.HEADLESS === 'true',
-  stepDelayMs: parseInt(process.env.STEP_DELAY_MS || '1000', 10),
+  stepDelayMs: parseInt(process.env.STEP_DELAY_MS || '300', 10),
 
   // Network Proxy Routing
   jevProxyUrl: process.env.JEV_PROXY_URL || process.env.JEV_PROXY || '',

@@ -44,13 +44,47 @@ export class JevAgent {
     const top = candidates[0];
     const scoreRemaining = Math.max(0, targetScore - (state.round?.chips || 0));
 
-    // Tactical Fast-Path:
-    // If top candidate guarantees 1-shot victory, execute immediately!
+    // Tactical Fast-Paths (0ms local decision, eliminates proxy LLM latency):
+    // 1. One-shot lethal play:
     if (top.type === 'play' && top.estimatedScore && top.estimatedScore >= scoreRemaining) {
       return {
         action: 'play',
         params: { cards: top.cardIndices },
-        reason: `[战术直觉] ${top.reason}`,
+        reason: `[秒杀战术直觉] ${top.reason}`,
+        confidence: 1.0,
+        source: 'tactical_fast_path',
+      };
+    }
+
+    // 2. Purple Seal Discard (100% mathematically optimal: generates free Tarot card!):
+    if (top.type === 'discard' && top.reason.includes('紫色蜡封')) {
+      return {
+        action: 'discard',
+        params: { cards: top.cardIndices },
+        reason: `[白嫖战术直觉] ${top.reason}`,
+        confidence: 1.0,
+        source: 'tactical_fast_path',
+      };
+    }
+
+    // 3. Last Hand Remaining (Discards not permitted/pointless, mandatory play best hand!):
+    if ((state.round?.hands_left || 1) <= 1) {
+      const bestPlay = candidates.find(c => c.type === 'play') || top;
+      return {
+        action: 'play',
+        params: { cards: bestPlay.cardIndices },
+        reason: `[末手绝杀直觉] 剩余出牌仅剩最后 1 次，强制打出最高期望分牌型: ${bestPlay.reason}`,
+        confidence: 1.0,
+        source: 'tactical_fast_path',
+      };
+    }
+
+    // 4. Zero discards left (Must play card):
+    if ((state.round?.discards_left || 0) <= 0 && top.type === 'play') {
+      return {
+        action: 'play',
+        params: { cards: top.cardIndices },
+        reason: `[零弃牌直觉] 弃牌次数已用尽，果断打出最佳牌型: ${top.reason}`,
         confidence: 1.0,
         source: 'tactical_fast_path',
       };
@@ -355,6 +389,24 @@ export class JevAgent {
         reason: jokersCount >= jokersLimit
           ? '小丑栏已满(5/5)且无核心卡可换，严禁盲目刷新浪费利息，果断离店'
           : '当前金币不足或无高价值商品，果断离店存钱吃利息',
+        confidence: 1.0,
+        source: 'tactical_fast_path',
+      };
+    }
+
+    // Fast-path: God-tier cards, primary planets, and Joker replacements (100% must-do, skip 3s proxy LLM wait!)
+    const mustBuyOption = shopOptions.find(o =>
+      o.action === 'replace_joker' ||
+      o.desc.includes('黑洞') ||
+      o.desc.includes('传奇神卡') ||
+      o.desc.includes('首选主打牌型专属星球牌') ||
+      o.desc.includes('小丑补充包: 极高价值必选')
+    );
+    if (mustBuyOption) {
+      return {
+        action: mustBuyOption.action,
+        params: mustBuyOption.param,
+        reason: `[商店极速直觉] ${mustBuyOption.desc}`,
         confidence: 1.0,
         source: 'tactical_fast_path',
       };

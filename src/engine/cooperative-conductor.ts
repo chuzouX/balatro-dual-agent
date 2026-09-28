@@ -45,8 +45,8 @@ export class CooperativeConductor {
 
         if (state.state !== this.lastCapturedState) {
           this.lastCapturedState = state.state;
-          // Capture snapshot on state switch
-          await this.captureSnapshot(state.state);
+          // Capture snapshot in background without blocking the loop
+          this.captureSnapshot(state.state).catch(() => {});
         }
 
         await this.handleState(state);
@@ -123,8 +123,8 @@ export class CooperativeConductor {
 
       case 'HAND_PLAYED':
       case 'DRAW_TO_HAND':
-        // Wait for Balatro animation to settle
-        await new Promise(r => setTimeout(r, 1000));
+        // Wait briefly for Balatro animation to settle
+        await new Promise(r => setTimeout(r, 400));
         break;
 
       default:
@@ -137,7 +137,7 @@ export class CooperativeConductor {
     console.log(pc.magenta('🎮 [Menu] 检测到主菜单，正在自动发起全新标准对局 (红牌组 + 白注难度)...'));
     await this.client.startRun('RED', 'WHITE');
     console.log(pc.green('✓ [Menu] 对局成功开启，等待进入盲注选择...'));
-    await new Promise(r => setTimeout(r, 2000));
+    await new Promise(r => setTimeout(r, 800));
   }
 
   private async handleBlindSelect(state: GameState): Promise<void> {
@@ -170,7 +170,7 @@ export class CooperativeConductor {
     // Choose to select blind
     await this.client.selectBlind();
     console.log(pc.green(`✓ [Blind] 选定挑战 ${targetBlind?.name || '盲注'}，发牌就位！`));
-    await new Promise(r => setTimeout(r, 1500));
+    await new Promise(r => setTimeout(r, 450));
   }
 
   /**
@@ -198,7 +198,7 @@ export class CooperativeConductor {
         console.log(pc.bold(pc.magenta(`🌌 [使用幻灵卡] 立即使用黑洞 [Black Hole]！全部 12 种牌型等级永久 +1！`)));
         try {
           await this.client.use(i);
-          await new Promise(r => setTimeout(r, 1200));
+          await new Promise(r => setTimeout(r, 300));
           return true;
         } catch (e: any) {
           console.warn(pc.yellow(`[Spectral] 使用黑洞失败: ${e.message}`));
@@ -211,7 +211,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.magenta(`✨ [使用幻灵卡] 立即使用灵魂 [The Soul]！免费召唤传奇稀有小丑！`)));
           try {
             await this.client.use(i);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -224,7 +224,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.yellow(`⚓ [使用幻灵卡] 独苗复制！使用铁锚 [Ankh] 完美复制唯一核心小丑且零损耗！`)));
           try {
             await this.client.use(i);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -237,7 +237,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.yellow(`🔮 [使用幻灵卡] 单卡镀彩！使用妖术 [Hex] 为唯一核心小丑附加双色(x1.5 Mult)！`)));
           try {
             await this.client.use(i);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -249,7 +249,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.yellow(`👻 [使用幻灵卡] 资金见底破局！使用死灵 [Wraith] 免费抽取强力稀有小丑！`)));
           try {
             await this.client.use(i);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -265,7 +265,7 @@ export class CooperativeConductor {
         console.log(pc.bold(pc.magenta(`🪐 [使用道具] 立即使用星球牌 [${c.label || c.key}]，永久提升【${handName}】基础等级！`)));
         try {
           await this.client.use(i);
-          await new Promise(r => setTimeout(r, 1200));
+          await new Promise(r => setTimeout(r, 300));
           return true;
         } catch (e: any) {
           console.warn(pc.yellow(`[Consumable] 使用星球牌失败: ${e.message}`));
@@ -279,7 +279,7 @@ export class CooperativeConductor {
         console.log(pc.bold(pc.yellow(`💰 [使用道具] 使用塔罗牌 [The Hermit]，金币翻倍！`)));
         try {
           await this.client.use(i);
-          await new Promise(r => setTimeout(r, 1200));
+          await new Promise(r => setTimeout(r, 300));
           return true;
         } catch {}
       }
@@ -288,7 +288,7 @@ export class CooperativeConductor {
         console.log(pc.bold(pc.yellow(`💰 [使用道具] 使用塔罗牌 [Temperance]，兑现小丑牌出售收益！`)));
         try {
           await this.client.use(i);
-          await new Promise(r => setTimeout(r, 1200));
+          await new Promise(r => setTimeout(r, 300));
           return true;
         } catch {}
       }
@@ -298,7 +298,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.cyan(`🪐 [使用道具] 使用塔罗牌 [The High Priestess]，召唤 2 张随机星球牌！`)));
           try {
             await this.client.use(i);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -309,7 +309,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.cyan(`📜 [使用道具] 使用塔罗牌 [The Emperor]，召唤 2 张随机塔罗牌！`)));
           try {
             await this.client.use(i);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -320,7 +320,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.cyan(`🃏 [使用道具] 使用塔罗牌 [The Fool]，复制上一张使用的强力消耗卡！`)));
           try {
             await this.client.use(i);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -331,7 +331,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.cyan(`🃏 [使用道具] 使用塔罗牌 [Judgment]，免费召唤一张小丑牌！`)));
           try {
             await this.client.use(i);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -342,7 +342,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.cyan(`🎡 [使用道具] 使用塔罗牌 [Wheel of Fortune]，尝试为小丑牌镀金！`)));
           try {
             await this.client.use(i);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -365,7 +365,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.red(`🔥 [使用幻灵卡] 使用献祭 [Immolate]！精简手牌并立刻获取 $20 巨款！`)));
           try {
             await this.client.use(i);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -375,7 +375,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.magenta(`🔴 [使用幻灵卡] 使用既视感 [Deja Vu]，为最高点牌附加红色蜡封(重复计分)！`)));
           try {
             await this.client.use(i, [highestIdx]);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -385,7 +385,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.cyan(`🔵 [使用幻灵卡] 使用恍惚 [Trance]，附加蓝色蜡封(留手自造专属星球牌)！`)));
           try {
             await this.client.use(i, [lowestIdx]);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -395,7 +395,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.magenta(`🟣 [使用幻灵卡] 使用通灵 [Medium]，为杂牌附加紫色蜡封(弃牌白嫖塔罗牌)！`)));
           try {
             await this.client.use(i, [lowestIdx]);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -405,7 +405,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.yellow(`🟡 [使用幻灵卡] 使用护身符 [Talisman]，为核心牌附加金色蜡封(计分+$3)！`)));
           try {
             await this.client.use(i, [highestIdx]);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -415,7 +415,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.magenta(`🌈 [使用幻灵卡] 使用灵气 [Aura]，为最高点牌镀上闪箔/镭射/双色！`)));
           try {
             await this.client.use(i, [highestIdx]);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -428,7 +428,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.magenta(`👥 [使用幻灵卡] 使用密室 [Cryptid]，复制 2 张最强核心牌放入卡组！`)));
           try {
             await this.client.use(i, [bestCopyIdx]);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -441,7 +441,7 @@ export class CooperativeConductor {
             console.log(pc.bold(pc.red(`💀 [使用道具] 使用塔罗牌 [Death]，将杂牌转化为高点数/强化牌副本！`)));
             try {
               await this.client.use(i, [targetJunk, targetHero]);
-              await new Promise(r => setTimeout(r, 1200));
+              await new Promise(r => setTimeout(r, 300));
               return true;
             } catch {}
           }
@@ -454,7 +454,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.yellow(`✨ [使用道具] 使用塔罗牌 [The Devil]，强化黄金卡！`)));
           try {
             await this.client.use(i, [targetIdx]);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -465,7 +465,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.green(`✨ [使用道具] 使用塔罗牌 [The Empress]，强化 2 张倍率卡(+4 Mult)！`)));
           try {
             await this.client.use(i, targets);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -476,7 +476,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.blue(`✨ [使用道具] 使用塔罗牌 [The Hierophant]，强化 2 张筹码卡(+30 Chips)！`)));
           try {
             await this.client.use(i, targets);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -486,7 +486,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.cyan(`🛡️ [使用道具] 使用塔罗牌 [The Chariot]，强化钢铁卡 (手持提供 x1.5 Mult)！`)));
           try {
             await this.client.use(i, [lowestIdx]);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -497,7 +497,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.cyan(`🍀 [使用道具] 使用塔罗牌 [The Magician]，强化 2 张幸运卡！`)));
           try {
             await this.client.use(i, targets);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -507,7 +507,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.cyan(`💎 [使用道具] 使用塔罗牌 [Justice]，强化玻璃卡 (x2 Mult)！`)));
           try {
             await this.client.use(i, [highestIdx]);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -517,7 +517,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.magenta(`❤️ [使用道具] 使用塔罗牌 [The Lovers]，将手牌强化为万能百搭卡！`)));
           try {
             await this.client.use(i, [highestIdx]);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -527,7 +527,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.dim(`🗿 [使用道具] 使用塔罗牌 [The Tower]，将低点废牌转化为石头卡(+50 Chips)！`)));
           try {
             await this.client.use(i, [lowestIdx]);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -538,7 +538,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.yellow(`💪 [使用道具] 使用塔罗牌 [Strength]，手牌点数+1！`)));
           try {
             await this.client.use(i, targets.length > 0 ? targets : [highestIdx]);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -549,7 +549,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.red(`🗑️ [使用道具] 使用塔罗牌 [The Hanged Man]，撕毁 2 张低点杂牌精简牌组！`)));
           try {
             await this.client.use(i, targets);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -560,7 +560,7 @@ export class CooperativeConductor {
           console.log(pc.bold(pc.magenta(`🎨 [使用道具] 使用花色转换塔罗牌，统一手牌花色冲刺同花！`)));
           try {
             await this.client.use(i, targets);
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 300));
             return true;
           } catch {}
         }
@@ -606,7 +606,7 @@ export class CooperativeConductor {
         console.log(pc.cyan(`   最优顺序: ${sortResult.description}`));
         try {
           await this.client.rearrangeJokers(sortResult.newOrder);
-          await new Promise(r => setTimeout(r, 600));
+          await new Promise(r => setTimeout(r, 250));
         } catch (e: any) {
           console.warn(pc.yellow(`[JokerSorter] 重排小丑提示: ${e.message}`));
         }
@@ -643,14 +643,14 @@ export class CooperativeConductor {
       console.log(pc.bold(pc.green(`⚔️ [Jev 出牌] 打出: [ ${names} ]`)));
       console.log(pc.dim(`   理由: ${decision.reason} (置信度: ${(decision.confidence * 100).toFixed(0)}%)`));
       await this.client.playCards(playedCards);
-      await new Promise(r => setTimeout(r, 1600));
+      await new Promise(r => setTimeout(r, 600));
     } else if (decision.action === 'discard') {
       const discardCards = decision.params.cards as number[];
       const names = discardCards.map(i => `${cards[i]?.value?.rank || '?'}${SUIT_NAMES[cards[i]?.value?.suit || 'S'] || ''}`).join(' ');
       console.log(pc.bold(pc.yellow(`🔄 [Jev 弃牌] 弃掉: [ ${names} ]`)));
       console.log(pc.dim(`   理由: ${decision.reason} (置信度: ${(decision.confidence * 100).toFixed(0)}%)`));
       await this.client.discardCards(discardCards);
-      await new Promise(r => setTimeout(r, 1400));
+      await new Promise(r => setTimeout(r, 450));
     }
   }
 
@@ -658,7 +658,7 @@ export class CooperativeConductor {
     console.log(pc.bold(pc.green(`🎉 [Round Clear] 回合胜利！总得分: ${state.round?.chips || 0}！正在提现奖金...`)));
     await this.client.cashOut();
     console.log(pc.green(`✓ [Cash Out] 提现成功，进入商店阶段！`));
-    await new Promise(r => setTimeout(r, 1500));
+    await new Promise(r => setTimeout(r, 400));
   }
 
   private async handleShop(state: GameState): Promise<void> {
@@ -699,14 +699,14 @@ export class CooperativeConductor {
       console.log(pc.bold(pc.magenta(`🔄 [Jev 换牌] ${decision.reason}`)));
       try {
         await this.client.sellJoker(decision.params.sellJoker);
-        await new Promise(r => setTimeout(r, 800));
+        await new Promise(r => setTimeout(r, 250));
         await this.client.buy({ card: decision.params.buyCard });
-        await new Promise(r => setTimeout(r, 1200));
+        await new Promise(r => setTimeout(r, 350));
       } catch (err: any) {
         console.warn(pc.yellow(`⚠️ [Jev 换牌] 换牌执行异常: ${err.message}，停止换牌并离店`));
         await this.client.nextRound();
       }
-      await new Promise(r => setTimeout(r, 1200));
+      await new Promise(r => setTimeout(r, 350));
     } else if (decision.action === 'buy') {
       console.log(pc.bold(pc.magenta(`🛒 [Jev 选购] 执行购买: ${decision.reason}`)));
       try {
@@ -715,7 +715,7 @@ export class CooperativeConductor {
         console.warn(pc.yellow(`⚠️ [Jev 选购] 购买失败: ${err.message}，停止购买并离店`));
         await this.client.nextRound();
       }
-      await new Promise(r => setTimeout(r, 1200));
+      await new Promise(r => setTimeout(r, 350));
     } else if (decision.action === 'reroll') {
       console.log(pc.bold(pc.yellow(`🎲 [Jev 刷新] 刷新货架: ${decision.reason}`)));
       try {
@@ -724,11 +724,11 @@ export class CooperativeConductor {
         console.warn(pc.yellow(`⚠️ [Jev 刷新] 刷新失败: ${err.message}，停止刷新并离店`));
         await this.client.nextRound();
       }
-      await new Promise(r => setTimeout(r, 1200));
+      await new Promise(r => setTimeout(r, 350));
     } else {
       console.log(pc.bold(pc.blue(`🚪 [Jev 离店] ${decision.reason}`)));
       await this.client.nextRound();
-      await new Promise(r => setTimeout(r, 1200));
+      await new Promise(r => setTimeout(r, 350));
     }
   }
 
@@ -741,7 +741,7 @@ export class CooperativeConductor {
     } catch {
       await this.client.skipPack();
     }
-    await new Promise(r => setTimeout(r, 1200));
+    await new Promise(r => setTimeout(r, 350));
   }
 
   private async handleGameOver(state: GameState): Promise<void> {

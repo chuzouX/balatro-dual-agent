@@ -1,23 +1,23 @@
 {
-  "totalRuns": 8,
+  "totalRuns": 10,
   "bestAnte": 4,
   "bestRound": 12,
   "bestScore": 6656,
   "topLessons": [
+    "【行动硬指令】前2回合必补筹码与×Mult双引擎，杜绝单小丑硬冲BOSS盲注",
+    "3底注前必配至少1张×Mult放最右，无用小丑立即卖掉。",
     "【行动硬指令】有钱先补核心xMult，禁止空栏存钱进BOSS。",
     "【行动硬指令】满格无×Mult必卖Chaos，见×Mult就买并放最右，别囤钱。",
     "无×Mult不进第4底注，卖Misprint也要买乘倍放最右",
-    "【行动硬指令】前期宁可少1利息也要买小丑，空场进BOSS必死",
-    "【行动硬指令】底注2前必买×Mult，勿为利息拖死输出。",
-    "【严守 $25 利息线】非紧急关头不得将金币花至 $5 以下！"
+    "【行动硬指令】前期宁可少1利息也要买小丑，空场进BOSS必死"
   ],
   "bossKnowledge": {
     "The Window": "面对 The Window 时提前使用洗牌避开方片花色",
     "The Psychic": "强制必须打满 5 张牌才计分：若手牌只有对子或三条，必须垫入低点数废牌凑齐 5 张打出！",
     "The Needle": "只有 1 次出牌机会：出牌前用光全部弃牌调整手牌，打出最高单次爆发！",
-    "The Pillar": "打The Pillar前本底注别打主力牌/花色，预留全新花色同花，并提前备好×Mult与星球升级；若核心牌已被削弱，立即换未污染花色或牌型破局。",
+    "The Pillar": "The Pillar会削弱本底注已打出的所有牌：①优先跳过小盲/大盲，减少已出场牌被削范围；②进BOSS前保留一整组从未打出过的点数/花色（如未用过的对子/同花），用“零污染”新牌做斩杀；③前两回合只用垃圾牌试探，绝不动核心高分牌。",
     "The Hook": "Hook每手随机弃2张，禁止跨手蓄牌；弃牌只用于开局找两对/三条，之后每手直接打最佳5张计分牌，优先三条/葫芦，别追同花顺子；有+Mult或+筹码小丑必买。",
-    "The Fish": "The Fish：首手前用光弃牌找两对/三条并触发Mystic Summit，首手打最高爆发；暗牌阶段只打已确认牌，不依赖新抽牌。",
+    "The Fish": "The Fish：弃牌阶段先凑好已知顺子/同花，保留1弃牌吃Banner，首手直接爆发斩杀；不能斩杀也别连续出小牌，避免抽到背牌污染手牌。",
     "The Eye": "The Eye禁止重复牌型：提前规划高牌→对子→两对→三条→顺子/同花等不重复序列；弃牌只找下一不同牌型；小丑换成通用×Mult，别靠对子/红心条件。",
     "The Mark": "The Mark会隐藏所有人头牌，背面J/Q/K无法确认花色，别赌Ancient；弃掉背面人头，只打可见Ancient花色的牌凑同花/两对/三条。可见花色不足时，改打可见非人头高点数对子/三条，靠Blue Joker撑筹码、Supernova吃出牌次数，商店优先买同花星球与xMult，不再死存$25。"
   },
@@ -151,6 +151,40 @@
       "bossName": "The Mark",
       "rootCause": "经济未转化为战斗力：3/5小丑栏还握$24，却只有Ancient Joker一张条件xMult，且The Mark隐藏人头牌令其花色触发极不稳定，最终筹码与倍率不足4320。",
       "lesson": "【行动硬指令】有钱先补核心xMult，禁止空栏存钱进BOSS。"
+    },
+    {
+      "runId": 9,
+      "timestamp": "2026-09-28T18:31:57.343Z",
+      "reachedAnte": 3,
+      "reachedRound": 8,
+      "finalMoney": 20,
+      "finalScore": 2780,
+      "targetScore": 4000,
+      "jokers": [
+        "Faceless Joker",
+        "Banner",
+        "Scholar",
+        "Square Joker",
+        "Showman"
+      ],
+      "bossName": "The Fish",
+      "rootCause": "缺×Mult乘区且未卖Showman换乘倍，Banner/Scholar/Square仅加法成长，第3底注4000目标前输出严重不足。",
+      "lesson": "3底注前必配至少1张×Mult放最右，无用小丑立即卖掉。"
+    },
+    {
+      "runId": 10,
+      "timestamp": "2026-09-28T18:33:57.234Z",
+      "reachedAnte": 1,
+      "reachedRound": 2,
+      "finalMoney": 2,
+      "finalScore": 252,
+      "targetScore": 600,
+      "jokers": [
+        "Fortune Teller"
+      ],
+      "bossName": "The Pillar",
+      "rootCause": "经济彻底断流($2)+单小丑Fortune Teller无成长，全程缺少筹码源与×Mult乘法引擎，面对600分斩杀线只能打出252，纯属引擎真空被BOSS机制压死。",
+      "lesson": "【行动硬指令】前2回合必补筹码与×Mult双引擎，杜绝单小丑硬冲BOSS盲注"
     }
   ]
 }
