@@ -1,3 +1,9 @@
+// Filter harmless experimental warnings (such as SOCKS5 proxy warning)
+process.on('warning', (warning) => {
+  if (warning.name === 'ExperimentalWarning') return;
+  console.warn(warning);
+});
+
 import { BalatroClient } from './driver/balatro-client.js';
 import { CooperativeConductor } from './engine/cooperative-conductor.js';
 import { config, validateConfig } from './config.js';

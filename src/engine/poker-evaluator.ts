@@ -283,7 +283,12 @@ export class PokerEvaluator {
     targetScore: number,
     currentScore: number,
     handLevels?: Record<string, PokerHandInfo>,
-    primaryHandType?: string
+    primaryHandType?: string,
+    bossConstraint?: {
+      bossName?: string;
+      mouthLockedHandType?: string | null;
+      eyePlayedHandTypes?: Set<string>;
+    }
   ): HandCandidate[] {
     const n = cards.length;
     const candidates: HandCandidate[] = [];
@@ -314,7 +319,7 @@ export class PokerEvaluator {
     }
 
     // Evaluate all collected play combinations
-    const evaluatedPlays: (EvaluatedPokerHand & { indices: number[] })[] = [];
+    let evaluatedPlays: (EvaluatedPokerHand & { indices: number[] })[] = [];
     const seenHandFingerprints = new Set<string>();
 
     for (const combo of playCombos) {
@@ -325,6 +330,32 @@ export class PokerEvaluator {
       seenHandFingerprints.add(scoringKey);
 
       evaluatedPlays.push({ ...evalResult, indices: combo });
+    }
+
+    // ── BOSS CONSTRAINTS ENFORCEMENT ──────────────────────────────
+    // 1. The Psychic: "Must play 5 cards" (fewer than 5 cards score 0)
+    if (bossConstraint?.bossName === 'The Psychic') {
+      const minCards = Math.min(5, cards.length);
+      evaluatedPlays = evaluatedPlays.filter(p => p.indices.length >= minCards);
+    }
+
+    // 2. The Eye: "No repeat hand types this round" (previously played types score 0)
+    if (bossConstraint?.bossName === 'The Eye' && bossConstraint.eyePlayedHandTypes && bossConstraint.eyePlayedHandTypes.size > 0) {
+      evaluatedPlays = evaluatedPlays.filter(p => !bossConstraint.eyePlayedHandTypes!.has(p.handType));
+    }
+
+    // 3. The Mouth: "Play only 1 hand type this round"
+    if (bossConstraint?.bossName === 'The Mouth') {
+      if (bossConstraint.mouthLockedHandType) {
+        // Hand type has already been locked! ONLY plays matching this exact type are allowed!
+        evaluatedPlays = evaluatedPlays.filter(p => p.handType === bossConstraint.mouthLockedHandType);
+      } else if (primaryHandType !== 'High Card') {
+        // First hand: never lock into High Card unless High Card is the primary deck engine!
+        const nonHighCard = evaluatedPlays.filter(p => p.handType !== 'High Card');
+        if (nonHighCard.length > 0) {
+          evaluatedPlays = nonHighCard;
+        }
+      }
     }
 
     // Sort plays by estimated total score

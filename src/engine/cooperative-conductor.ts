@@ -21,6 +21,8 @@ export class CooperativeConductor {
   private lastCapturedState = '';
   private lastCashOutKey = '';
   private cashOutAttempts = 0;
+  private mouthLockedHandType: string | null = null;
+  private eyePlayedHandTypes: Set<string> = new Set();
 
   constructor(client: BalatroClient) {
     this.client = client;
@@ -145,6 +147,8 @@ export class CooperativeConductor {
   private async handleMenu(_state: GameState): Promise<void> {
     this.lastCashOutKey = '';
     this.cashOutAttempts = 0;
+    this.mouthLockedHandType = null;
+    this.eyePlayedHandTypes.clear();
     console.log(pc.magenta('🎮 [Menu] 检测到主菜单，正在自动发起全新标准对局 (红牌组 + 白注难度)...'));
     await this.client.startRun('RED', 'WHITE');
     console.log(pc.green('✓ [Menu] 对局成功开启，等待进入盲注选择...'));
@@ -152,6 +156,9 @@ export class CooperativeConductor {
   }
 
   private async handleBlindSelect(state: GameState): Promise<void> {
+    this.mouthLockedHandType = null;
+    this.eyePlayedHandTypes.clear();
+
     const boss = state.blinds?.boss;
     // Inject historical lessons & boss counter memory into DeepSeek formulation
     const historicalContext = this.memory.getStrategicContext(boss?.name);
@@ -634,6 +641,18 @@ export class CooperativeConductor {
     console.log(pc.dim(`🎴 当前手牌 (${cards.length}张): ${cardStr}`));
     console.log(pc.dim(`📊 进度: ${currentScore} / ${targetScore} 筹码 | 剩余出牌: ${state.round?.hands_left} 次 | 剩余弃牌: ${state.round?.discards_left} 次`));
 
+    // Check active Boss constraints
+    const isBossActive = boss?.status === 'CURRENT';
+    const bossName = isBossActive ? boss?.name : undefined;
+
+    const bossConstraint = isBossActive
+      ? {
+          bossName,
+          mouthLockedHandType: this.mouthLockedHandType,
+          eyePlayedHandTypes: this.eyePlayedHandTypes,
+        }
+      : undefined;
+
     // Generate ranked tactical candidates (aligned with primaryHandType and held Steel cards)
     const candidates = PokerEvaluator.generateCandidates(
       cards,
@@ -642,7 +661,8 @@ export class CooperativeConductor {
       targetScore,
       currentScore,
       state.hands,
-      this.currentStrategy?.primaryHandType
+      this.currentStrategy?.primaryHandType,
+      bossConstraint
     );
 
     // Let Jev System 1 make the tactical choice
@@ -653,6 +673,21 @@ export class CooperativeConductor {
       const names = playedCards.map(i => `${cards[i]?.value?.rank || '?'}${SUIT_NAMES[cards[i]?.value?.suit || 'S'] || ''}`).join(' ');
       console.log(pc.bold(pc.green(`⚔️ [Jev 出牌] 打出: [ ${names} ]`)));
       console.log(pc.dim(`   理由: ${decision.reason} (置信度: ${(decision.confidence * 100).toFixed(0)}%)`));
+
+      // Track Boss hand limitations
+      if (isBossActive && bossName) {
+        const playedEval = PokerEvaluator.evaluateCombination(cards, playedCards, state.hands);
+        if (bossName === 'The Mouth') {
+          if (!this.mouthLockedHandType) {
+            this.mouthLockedHandType = playedEval.handType;
+            console.log(pc.bold(pc.red(`🚨 [The Mouth 锁定] 首手打出【${playedEval.handType}】，本回合后续出牌已强制锁定为该牌型！`)));
+          }
+        } else if (bossName === 'The Eye') {
+          this.eyePlayedHandTypes.add(playedEval.handType);
+          console.log(pc.bold(pc.yellow(`👁️ [The Eye 记录] 已打出【${playedEval.handType}】，本回合严禁重复打出该牌型！`)));
+        }
+      }
+
       await this.client.playCards(playedCards);
       await new Promise(r => setTimeout(r, 600));
     } else if (decision.action === 'discard') {
@@ -782,6 +817,8 @@ export class CooperativeConductor {
   private async handleGameOver(state: GameState): Promise<void> {
     this.lastCashOutKey = '';
     this.cashOutAttempts = 0;
+    this.mouthLockedHandType = null;
+    this.eyePlayedHandTypes.clear();
     console.log(pc.bold(pc.red(`\n💀 [Game Over] 本轮挑战结束！`)));
     console.log(pc.yellow(`📊 战绩统计: 到达底注 ${state.ante_num} | 通关回合 ${state.round_num} | 累计金币 $${state.money}`));
 

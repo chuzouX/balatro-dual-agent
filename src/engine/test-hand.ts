@@ -127,4 +127,23 @@ if (candidates7[0].type === 'play' && candidates7[0].handType === 'Flush') {
   console.error(pc.red(`❌ 候选 1 不是同花，实际为: ${candidates7[0].handType || candidates7[0].type}`));
 }
 
+// Test 8: The Mouth Boss Constraint Test (Once locked into Two Pair, cannot play Flush or Pair!)
+const mouthCandidates = PokerEvaluator.generateCandidates(
+  cardsBigBlindTest,
+  3,
+  2,
+  1600,
+  300,
+  undefined,
+  undefined,
+  { bossName: 'The Mouth', mouthLockedHandType: 'Two Pair' }
+);
+console.log(pc.green(`测试 8 - The Mouth 锁定测试 (已锁定 Two Pair):`));
+const playMouth = mouthCandidates.filter(c => c.type === 'play');
+if (playMouth.length > 0 && playMouth.every(c => c.handType === 'Two Pair')) {
+  console.log(pc.green('✓ 成功！对战 The Mouth 时，所有出牌候选均严格限制为已锁定的【Two Pair】，彻底杜绝被 0 分吃牌！'));
+} else {
+  console.error(pc.red(`❌ 存在非 Two Pair 的出牌候选: ${playMouth.map(c => c.handType).join(', ')}`));
+}
+
 console.log(pc.bold(pc.green('\n🎉 评估引擎自检全部通过！\n')));
