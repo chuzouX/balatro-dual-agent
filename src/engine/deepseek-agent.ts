@@ -50,7 +50,16 @@ export class DeepSeekAgent {
     }
 
     try {
+      const small = state.blinds?.small;
+      const big = state.blinds?.big;
       const boss = state.blinds?.boss;
+
+      // Identify whether current blind is Boss Blind vs Small/Big Blind
+      const isBossBlindActive = (boss?.status === 'CURRENT' || boss?.status === 'SELECT');
+      const isBigBlindActive = (big?.status === 'CURRENT' || big?.status === 'SELECT');
+      const currentBlindType = isBossBlindActive ? 'BOSS盲注' : (isBigBlindActive ? '大盲注 (Big Blind)' : '小盲注 (Small Blind)');
+      const currentBlindScore = isBossBlindActive ? (boss?.score || 600) : (isBigBlindActive ? (big?.score || 450) : (small?.score || 300));
+
       const currentJokers = state.jokers?.cards?.map(j => `${j.label || j.key}`).join(', ') || '无';
 
       // Summarize upgraded hand levels
@@ -63,7 +72,7 @@ export class DeepSeekAgent {
         }
       }
 
-      const memoryPromptPart = historicalContext ? `\n${historicalContext}\n` : '';
+      const memoryPromptPart = historicalContext ? `\n【历史战术备忘】\n${historicalContext}\n` : '';
 
       // Analyze current engine Trinity status (Chips + Flat Mult + XMult)
       const jokerCards = state.jokers?.cards || [];
@@ -78,25 +87,28 @@ export class DeepSeekAgent {
 
       const prompt = `当前小丑牌实战对局状态与引擎诊断：
 - 底注 (Ante): ${state.ante_num} / 8, 回合 (Round): ${state.round_num}
+- 当前挑战关卡: 【${currentBlindType}】 (目标通关筹码: ${currentBlindScore})
+- BOSS盲注信息: 【${boss?.name || '未知'}】 (效果: ${boss?.effect || '无'}, BOSS目标分: ${boss?.score || '?'})
+  -> 🚨【关键判读】: ${isBossBlindActive ? '当前正是 BOSS 盲注，BOSS 词条限制正在生效！请针对性给出破局指令！' : '【普通小盲/大盲阶段，BOSS 词条完全未生效！】小盲大盲没有任何负面词条限制，当前首要任务是打出最高分过关赚取奖金并进入商店，【绝对严禁】因顾虑未来BOSS而在小盲大盲打废牌或放水自杀！'}
 - 当前金币: $${state.money} (利息机制：持满 $25 吃满每回合 $5 利息封顶)
 - 当前小丑牌 (Jokers): ${currentJokers} (${state.jokers?.count || 0}/${state.jokers?.limit || 5})
 - 引擎三位一体诊断：[筹码Chips: ${hasChips ? '✅具备' : '❌缺失'}] | [加法倍率+Mult: ${hasFlatMult ? '✅具备' : '❌缺失'}] | [乘法倍率xMult: ${hasXMult ? '✅具备' : '❌缺失'}]
   -> 引擎当前核心缺口：${missingPieceDesc}
 - 已升级牌型: ${upgradedHands.length > 0 ? upgradedHands.join(', ') : '暂无升级，均为基础等级'}
-- BOSS盲注: ${boss?.name || '未知'} (效果: ${boss?.effect || '无'}, 目标分: ${boss?.score || '?'})
-- 目标盲注: 当前所需筹码: ${state.blinds?.small?.score || state.blinds?.big?.score || 300}
 ${memoryPromptPart}
 请依据《小丑牌高分秘诀：先搭好引擎，再追求爆分》及【历史反思记忆】，为战术执行系统 (System 1 Jev) 制定宏观战略指导简报：
-1. 锁定单一主打牌型 (primaryHandType)：切忌雨露均沾！指定最契合当前小丑的 1 种主打牌型（若小丑点数高或有钢铁牌，优先考虑【高牌 High Card】或【对子 Pair】留手牌吃加成；或锁定【同花 Flush】/【顺子 Straight】/【葫芦 Full House】）
+1. 锁定单一主打牌型 (primaryHandType)：
+   - ⚠️【前两底注 (Ante 1~2) 铁律】：在尚未拥有强力点数小丑和星球等级前，【绝对禁止锁定高牌 High Card 或对子 Pair】！因为基础分极低（单手仅20~60分），盲目打对子无法逾越 300~600 分必死无疑！前两底注必须锁定高基础点数的【同花 Flush】、【葫芦 Full House】、【顺子 Straight】或【三条 Three of a Kind】！
+   - 只有在中后期拥有+筹码/+Mult小丑、冥王星/水星高等级或大量钢铁牌留手时，才允许转型高牌/对子！
 2. 引擎补缺与小丑布局：针对三位一体缺口指示选购重点，并要求从左到右严格排序【经济/功能】->【+筹码】->【+Mult】->【xMult最右】
 3. 理财与盲注纪律：贯彻前期活下来、攒到 $25 满利息的滚雪球法则；提醒【谨慎跳过盲注，绝大多数情况选 select 进战拿奖金和看商店】
-4. BOSS应对与少手数斩杀：结合 BOSS 特性给出避坑手段，指导 Jev 尽量少出牌一击过关，将剩余手数转化为额外金币！
+4. BOSS 应对与关卡专注：${isBossBlindActive ? '针对当前 BOSS 特性给出避坑手段' : '当前非BOSS战，提醒 Jev 全力打高基础大牌斩杀过关拿钱，切勿保留弃牌或出弱牌！'}
 
 请以严格的 JSON 格式输出：
 {
   "primaryHandType": "Flush",
-  "targetHandTypes": ["Flush", "Pair"],
-  "recommendedPlayStyle": "集中强化单一主打牌型，争取1手击杀多拿剩余手数奖金",
+  "targetHandTypes": ["Flush", "Full House"],
+  "recommendedPlayStyle": "集中打出高基础点数牌型确保通关，争取少出牌拿剩余手数奖金",
   "economyGoal": "尽量保持金币在 $25 以上吃满 $5 利息",
   "engineStatus": {
     "hasChips": ${hasChips},
@@ -105,7 +117,7 @@ ${memoryPromptPart}
     "missingPiece": "${missingPieceDesc}"
   },
   "jokerNeeds": ["需要乘法倍率xMult小丑放在最右侧", "补齐筹码小丑"],
-  "bossAlert": "针对当前BOSS特性的避坑破局策略",
+  "bossAlert": "${isBossBlindActive ? '针对当前BOSS词条的破解策略' : '当前为普通盲注，无Boss限制，全力打大牌过关'}",
   "blindActionAdvice": "select",
   "advice": "依据高分秘诀引擎论的核心行动指令一句话"
 }`;
@@ -131,8 +143,14 @@ ${BALATRO_RULEBOOK}
       const content = completion.choices[0]?.message?.content;
       if (content) {
         const parsed = JSON.parse(content);
+        let primaryHand = parsed.primaryHandType || fallbackDirective.primaryHandType;
+        // Ante 1-2 safety check: Force high base hand if model hallucinated Pair/High Card without engine
+        if ((state.ante_num || 1) <= 2 && (primaryHand === 'Pair' || primaryHand === 'High Card') && !hasChips && !hasFlatMult) {
+          primaryHand = 'Flush';
+        }
+
         return {
-          primaryHandType: parsed.primaryHandType || fallbackDirective.primaryHandType,
+          primaryHandType: primaryHand,
           targetHandTypes: parsed.targetHandTypes || fallbackDirective.targetHandTypes,
           recommendedPlayStyle: parsed.recommendedPlayStyle || fallbackDirective.recommendedPlayStyle,
           economyGoal: parsed.economyGoal || fallbackDirective.economyGoal,

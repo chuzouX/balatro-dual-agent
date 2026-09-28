@@ -106,4 +106,25 @@ if (sortResult.newOrder[sortResult.newOrder.length - 1] === 0 && sortResult.newO
   console.error(pc.red(`❌ 排序结果不符合预期: [${sortResult.newOrder.join(', ')}]`));
 }
 
+// Test 7: Big Blind 5-card Flush vs Pair Priority Test (Exact user scenario)
+const cardsBigBlindTest: Card[] = [
+  { id: 1, label: 'Ace of Diamonds', value: { rank: 'A', suit: 'D' } },
+  { id: 2, label: 'King of Diamonds', value: { rank: 'K', suit: 'D' } },
+  { id: 3, label: 'Queen of Hearts', value: { rank: 'Q', suit: 'H' } },
+  { id: 4, label: 'Queen of Diamonds', value: { rank: 'Q', suit: 'D' } },
+  { id: 5, label: '5 of Spades', value: { rank: '5', suit: 'S' } },
+  { id: 6, label: '5 of Clubs', value: { rank: '5', suit: 'C' } },
+  { id: 7, label: '4 of Diamonds', value: { rank: '4', suit: 'D' } },
+  { id: 8, label: '2 of Diamonds', value: { rank: '2', suit: 'D' } },
+];
+
+const candidates7 = PokerEvaluator.generateCandidates(cardsBigBlindTest, 4, 4, 450, 0, undefined, 'Pair');
+console.log(pc.green(`测试 7 - 绝杀同花保护测试 (即使有Pair建议，也必须优先出288分同花而非拆牌弃同花):`));
+console.log(`  候选 1: (${candidates7[0].type.toUpperCase()}) ${candidates7[0].cardsSummary} -> ${candidates7[0].reason} [优先分: ${candidates7[0].priorityScore}]`);
+if (candidates7[0].type === 'play' && candidates7[0].handType === 'Flush') {
+  console.log(pc.green('✓ 成功优先打出 288分同花大牌，完全杜绝了拆散方片同花打对子的低级失误！'));
+} else {
+  console.error(pc.red(`❌ 候选 1 不是同花，实际为: ${candidates7[0].handType || candidates7[0].type}`));
+}
+
 console.log(pc.bold(pc.green('\n🎉 评估引擎自检全部通过！\n')));

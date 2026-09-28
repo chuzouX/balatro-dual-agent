@@ -359,9 +359,18 @@ export class PokerEvaluator {
         reasonText += ` 🪐[手持蓝色蜡封: 终局结算自动获取专属星球牌！]`;
       }
 
-      let priority = adjustedScore + (canOneShot ? 100000 + remainingHands * 500 : 0);
-      if (primaryHandType && p.handType === primaryHandType) {
-        priority += 3000; // Bonus for specializing in the primary engine hand type
+      let priority = adjustedScore;
+      if (canOneShot) {
+        priority += 100000 + remainingHands * 500;
+      } else {
+        // High impact play bonus: hands scoring substantial chunks of the blind (>= 150 or >= 40% of scoreNeeded)
+        if (adjustedScore >= 150 || adjustedScore >= scoreNeeded * 0.4) {
+          priority += 2500;
+        }
+        // Small primaryHandType bonus (tie-breaker only, max +100 so it NEVER overrides a hand that scores 2x higher)
+        if (primaryHandType && p.handType === primaryHandType) {
+          priority += Math.min(adjustedScore * 0.25, 100);
+        }
       }
       if (hasBlueSealInHand && canOneShot) {
         priority += 2000; // Bonus for saving Blue Seal card
@@ -390,6 +399,12 @@ export class PokerEvaluator {
         rankCounts[r] = (rankCounts[r] || 0) + 1;
       }
       const pairedRanks = new Set(Object.keys(rankCounts).filter(r => rankCounts[r] >= 2));
+      // Identify suits that have flush potential (>= 4 cards) so we NEVER discard cards of those suits
+      const flushSuits = new Set(
+        Object.entries(suitGroups)
+          .filter(([_, idxs]) => idxs.length >= 4)
+          .map(([s]) => s)
+      );
 
       // Strategy 0: Purple Seal Discard Priority (Discarding generates a FREE Tarot card!)
       const purpleSealIndices = cards
@@ -413,7 +428,7 @@ export class PokerEvaluator {
         });
       }
 
-      // Strategy A: Discard non-flush cards if 4 cards share a suit
+      // Strategy A: Discard non-flush cards if 4 cards share a suit (only when 4 cards, NOT if already 5!)
       for (const [suit, indices] of Object.entries(suitGroups)) {
         if (indices.length === 4 || (indices.length === 3 && remainingDiscards >= 2 && pairedRanks.size === 0)) {
           const nonFlushIndices = cards
@@ -428,16 +443,23 @@ export class PokerEvaluator {
               cardIndices: nonFlushIndices,
               cardsSummary: nonFlushIndices.map(i => `${cards[i].value?.rank || '?'}${SUIT_NAMES[cards[i].value?.suit || 'S'] || ''}`).join(' '),
               reason: `【洗同花】当前已有 ${indices.length} 张 ${SUIT_NAMES[suit]}，弃掉 ${nonFlushIndices.length} 张杂色牌冲同花`,
-              priorityScore: 3500 + indices.length * 500,
+              priorityScore: 2200 + indices.length * 300,
             });
           }
         }
       }
 
-      // Strategy B: Discard lowest isolated junk cards (protecting pairs, steel cards, and blue seals!)
+      // Strategy B: Discard lowest isolated junk cards (protecting flush cards, pairs, steel cards, and blue seals!)
       const junkIndices = cards
         .map((c, idx) => ({ c, idx, order: RANK_ORDER[c.value?.rank || '2'] || 0, count: rankCounts[c.value?.rank || '2'] || 1, mod: cardMods[idx] }))
-        .filter(x => x.count === 1 && x.order <= 9 && !x.mod.isSteel && !x.mod.hasBlueSeal && !x.mod.isGold)
+        .filter(x =>
+          x.count === 1 &&
+          x.order <= 9 &&
+          !x.mod.isSteel &&
+          !x.mod.hasBlueSeal &&
+          !x.mod.isGold &&
+          !flushSuits.has(x.c.value?.suit || '') // Protect potential/complete Flush cards!
+        )
         .sort((a, b) => a.order - b.order)
         .map(x => x.idx)
         .slice(0, 5);
@@ -448,7 +470,7 @@ export class PokerEvaluator {
           cardIndices: junkIndices,
           cardsSummary: junkIndices.map(i => `${cards[i].value?.rank || '?'}${SUIT_NAMES[cards[i].value?.suit || 'S'] || ''}`).join(' '),
           reason: `【优化牌库】弃掉 ${junkIndices.length} 张低点数孤张杂牌，抽高点数与对子`,
-          priorityScore: 2000,
+          priorityScore: 800,
         });
       }
     }
