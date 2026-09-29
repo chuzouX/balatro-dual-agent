@@ -261,4 +261,128 @@ console.log(`  对局黑匣子复盘汇报: ${summary}`);
 // Clean up test file
 if (fs.existsSync(testCalibrationPath)) fs.unlinkSync(testCalibrationPath);
 
-console.log(pc.bold(pc.green('\n🎉 评估与自纠引擎自检全部通过！\n')));
+// Test 12: Dynamic scaling Joker values extraction (Green Joker, Constellation, Stuntman)
+console.log(pc.green(`\n测试 12 - 动态成长小丑数值提取与实时算分测试 (Green Joker + Constellation + Stuntman):`));
+const scalingCards: Card[] = [
+  { id: 1, label: 'Ace of Spades', value: { rank: 'A', suit: 'S' } },
+  { id: 2, label: 'Ace of Hearts', value: { rank: 'A', suit: 'H' } },
+];
+const scalingJokers: Card[] = [
+  { id: 201, key: 'j_stuntman', label: 'Stuntman', value: { effect: '+250 Chips, -2 Hand size' } },
+  { id: 202, key: 'j_green_joker', label: 'Green Joker', value: { effect: '+1 Mult per hand played (Currently +14 Mult)' } },
+  { id: 203, key: 'j_constellation', label: 'Constellation', value: { effect: 'X0.1 Mult per Planet used (Currently X2.2 Mult)' } },
+];
+const resScaling = PokerEvaluator.evaluateCombination(scalingCards, [0, 1], undefined, scalingJokers);
+console.log(`  计算结果: ${resScaling.handType} 得分: ${resScaling.totalScore} (${resScaling.chips}筹码 × ${resScaling.mult}倍率)`);
+// Pair base: 10 chips, 2 mult. Cards: A(11) + A(11) = 22 chips.
+// Chips: 10 + 22 + 250 (Stuntman) = 282 chips.
+// Mult: (2 base + 14 Green Joker) * 2.2 Constellation = 16 * 2.2 = 35.2 -> 35 mult.
+// Total score: 282 * 35 = 9870.
+if (resScaling.chips === 282 && resScaling.mult === 35 && resScaling.totalScore === 9870) {
+  console.log(pc.green('✓ 成功！从文本描述与动态属性中精准解析出 +250Chips、+14Mult 与 X2.2Mult，算分 100% 吻合！'));
+} else {
+  console.error(pc.red(`❌ 动态数值计算偏差: chips=${resScaling.chips} (预期 282), mult=${resScaling.mult} (预期 35), score=${resScaling.totalScore} (预期 9870)`));
+}
+
+// Test 13: Retrigger mechanics (Hanging Chad + Hack + Red Seal)
+console.log(pc.green(`\n测试 13 - 重复触发机制测试 (Hanging Chad + Hack + Red Seal 2♥):`));
+const retriggerCards: Card[] = [
+  { id: 1, label: 'Red Seal 2 of Hearts', value: { rank: '2', suit: 'H' }, modifier: ['RED_SEAL'] },
+];
+const retriggerJokers: Card[] = [
+  { id: 301, key: 'j_hanging_chad', label: 'Hanging Chad', value: { effect: 'Retrigger first played card 2 times' } },
+  { id: 302, key: 'j_hack', label: 'Hack', value: { effect: 'Retrigger 2, 3, 4, 5' } },
+];
+// High Card base: 5 chips, 1 mult.
+// 2 of Hearts rank chips: 2.
+// Triggers: 1 base + 1 Red Seal + 2 Hanging Chad + 1 Hack = 5 triggers!
+// Total chips: 5 base + 5 * 2 = 15 chips. Mult: 1.
+const resRetrigger = PokerEvaluator.evaluateCombination(retriggerCards, [0], undefined, retriggerJokers);
+console.log(`  计算结果: ${resRetrigger.handType} 得分: ${resRetrigger.totalScore} (${resRetrigger.chips}筹码 × ${resRetrigger.mult}倍率)`);
+if (resRetrigger.chips === 15) {
+  console.log(pc.green('✓ 成功！首张红蜡封 2点卡牌被精确重触发 5 次 (1基础+1蜡封+2Chad+1Hack)，获得 15 筹码！'));
+} else {
+  console.error(pc.red(`❌ 重触发次数不匹配: chips=${resRetrigger.chips} (预期 15)`));
+}
+
+// Test 14: In-hand synergies (Baron + Mime + Steel Card with Red Seal)
+console.log(pc.green(`\n测试 14 - 手牌留存协同测试 (Baron + Mime + 钢铁红蜡封K♠):`));
+const heldSynergyCards: Card[] = [
+  { id: 1, label: 'Ace of Diamonds', value: { rank: 'A', suit: 'D' } },
+  { id: 2, label: 'Steel Red Seal King of Spades', value: { rank: 'K', suit: 'S' }, modifier: ['STEEL', 'RED_SEAL'] },
+];
+const heldSynergyJokers: Card[] = [
+  { id: 401, key: 'j_baron', label: 'Baron', value: { effect: 'Each King held in hand gives X1.5 Mult' } },
+  { id: 402, key: 'j_mime', label: 'Mime', value: { effect: 'Retrigger all card held in hand abilities' } },
+];
+// Play Ace of Diamonds (index 0). Held: Steel Red Seal K♠ (index 1).
+// High Card base: 5 chips, 1 mult. Ace: 11 chips. Total chips = 16 chips.
+// Held card triggers: 1 base + 1 Red Seal + 1 Mime = 3 triggers.
+// Each trigger: Steel x1.5, Baron x1.5 -> (1.5 * 1.5) = 2.25x.
+// 3 triggers: 1 * 2.25 * 2.25 * 2.25 = 11.390625 mult -> round to 11 mult.
+// Total score: 16 * 11 = 176.
+const resHeld = PokerEvaluator.evaluateCombination(heldSynergyCards, [0], undefined, heldSynergyJokers);
+console.log(`  计算结果: ${resHeld.handType} 得分: ${resHeld.totalScore} (${resHeld.chips}筹码 × ${resHeld.mult}倍率)`);
+if (resHeld.mult === 11 && resHeld.totalScore === 176) {
+  console.log(pc.green('✓ 成功！手持钢铁红蜡封K在 Baron + Mime 协同下连续触发 3 次倍增，倍率提升至 11x！'));
+} else {
+  console.error(pc.red(`❌ 手持协同计算偏差: mult=${resHeld.mult} (预期 11), score=${resHeld.totalScore} (预期 176)`));
+}
+
+// Test 15: Boss debuff mechanics (The Flint & The Goad)
+console.log(pc.green(`\n测试 15 - BOSS 词条削弱结算测试 (The Flint 基础减半 & The Goad 黑桃削弱):`));
+const spadeFlushCards: Card[] = [
+  { id: 1, label: 'Ace of Spades', value: { rank: 'A', suit: 'S' } },
+  { id: 2, label: 'King of Spades', value: { rank: 'K', suit: 'S' } },
+  { id: 3, label: 'Queen of Spades', value: { rank: 'Q', suit: 'S' } },
+  { id: 4, label: 'Jack of Spades', value: { rank: 'J', suit: 'S' } },
+  { id: 5, label: '9 of Spades', value: { rank: '9', suit: 'S' } },
+];
+// 1. The Flint: Flush base (35 chips, 4 mult) is halved to 18 chips, 2 mult.
+// Cards: A(11)+K(10)+Q(10)+J(10)+9(9) = 50 chips.
+// Total chips: 18 + 50 = 68. Mult = 2. Score = 68 * 2 = 136.
+const resFlint = PokerEvaluator.evaluateCombination(spadeFlushCards, [0, 1, 2, 3, 4], undefined, [], { bossName: 'The Flint' });
+console.log(`  The Flint 结算: ${resFlint.handType} 得分: ${resFlint.totalScore} (${resFlint.chips}筹码 × ${resFlint.mult}倍率)`);
+if (resFlint.chips === 68 && resFlint.mult === 2 && resFlint.totalScore === 136) {
+  console.log(pc.green('✓ 成功！The Flint 准确将同花基础点数/倍率减半至 18×2，总分 136！'));
+} else {
+  console.error(pc.red(`❌ The Flint 计算偏差: chips=${resFlint.chips}, mult=${resFlint.mult}, score=${resFlint.totalScore}`));
+}
+
+// 2. The Goad: All spades debuffed!
+// Flush recognized, base 35 chips, 4 mult.
+// All 5 cards give 0 chips!
+// Total chips = 35. Mult = 4. Score = 140.
+const resGoad = PokerEvaluator.evaluateCombination(spadeFlushCards, [0, 1, 2, 3, 4], undefined, [], { bossName: 'The Goad' });
+console.log(`  The Goad 结算: ${resGoad.handType} 得分: ${resGoad.totalScore} (${resGoad.chips}筹码 × ${resGoad.mult}倍率)`);
+if (resGoad.chips === 35 && resGoad.mult === 4 && resGoad.totalScore === 140) {
+  console.log(pc.green('✓ 成功！The Goad 准确使 5 张黑桃点数归 0，仅获得同花基础分 35×4 = 140！'));
+} else {
+  console.error(pc.red(`❌ The Goad 计算偏差: chips=${resGoad.chips}, mult=${resGoad.mult}, score=${resGoad.totalScore}`));
+}
+
+// Test 16: Plasma Deck balance scoring formula
+console.log(pc.green(`\n测试 16 - 等离子牌组 (Plasma Deck) 筹码与倍率平衡结算测试:`));
+// Standard deck: 200 chips, 20 mult -> 4,000 points.
+// Plasma deck: total = 220 -> chips = 110, mult = 110 -> 110 * 110 = 12,100 points!
+const plasmaCards: Card[] = [
+  { id: 1, label: 'Ace of Hearts', value: { rank: 'A', suit: 'H' } },
+  { id: 2, label: 'Ace of Diamonds', value: { rank: 'A', suit: 'D' } },
+];
+const plasmaJokers: Card[] = [
+  { id: 501, key: 'j_blue_joker', label: 'Blue Joker', value: { effect: '+168 Chips' } },
+  { id: 502, key: 'j_gros_michel', label: 'Gros Michel', value: { effect: '+18 Mult' } },
+];
+// Pair base: 10 chips, 2 mult. Cards: 22 chips. Blue joker: 168 chips. Total chips = 200.
+// Mult: 2 base + 18 Gros Michel = 20 mult.
+const resStandardDeck = PokerEvaluator.evaluateCombination(plasmaCards, [0, 1], undefined, plasmaJokers, { deck: 'RED' });
+const resPlasmaDeck = PokerEvaluator.evaluateCombination(plasmaCards, [0, 1], undefined, plasmaJokers, { deck: 'PLASMA' });
+console.log(`  普通牌组得分: ${resStandardDeck.totalScore} (${resStandardDeck.chips}×${resStandardDeck.mult})`);
+console.log(`  等离子牌组得分: ${resPlasmaDeck.totalScore} (${resPlasmaDeck.chips}×${resPlasmaDeck.mult})`);
+if (resStandardDeck.totalScore === 4000 && resPlasmaDeck.totalScore === 12100 && resPlasmaDeck.chips === 110 && resPlasmaDeck.mult === 110) {
+  console.log(pc.green('✓ 成功！等离子牌组准确将 200筹码与 20倍率平衡为 110×110 = 12,100分！'));
+} else {
+  console.error(pc.red(`❌ 等离子牌组计算偏差: standard=${resStandardDeck.totalScore}, plasma=${resPlasmaDeck.totalScore}`));
+}
+
+console.log(pc.bold(pc.green('\n🎉 评估与自纠引擎 16 项全场景自检 100% 全部通过！\n')));

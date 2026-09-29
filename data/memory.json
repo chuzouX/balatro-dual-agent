@@ -1,15 +1,15 @@
 {
-  "totalRuns": 15,
+  "totalRuns": 18,
   "bestAnte": 4,
   "bestRound": 12,
   "bestScore": 6656,
   "topLessons": [
+    "Flint战只打顺子触发Devious，禁对子高牌，先攒钱补xMult。",
+    "前期先买+Mult小丑，禁连打两对，BOSS避红桃核心",
+    "专注升级同花/三条，底注4前必成强×Mult，禁打对子两对。",
     "底注3前必拿至少一张×Mult小丑，缺它不硬闯BOSS。",
     "缺筹码源与独立×Mult时，严禁进底注3",
-    "【行动硬指令】进 BOSS 前必花钱补 +Chips/×Mult，禁止 >$25 硬闯！",
-    "【行动硬指令】无稳定×Mult不碰锁牌型BOSS，别裸冲顺子。",
-    "前期先买筹码和+Mult，BOSS前保留未污染牌",
-    "【行动硬指令】前2回合必补筹码与×Mult双引擎，杜绝单小丑硬冲BOSS盲注"
+    "【行动硬指令】进 BOSS 前必花钱补 +Chips/×Mult，禁止 >$25 硬闯！"
   ],
   "bossKnowledge": {
     "The Window": "The Window削弱所有方片，导致Greedy Joker的半边输出被打空。破局三选一：①开局前改打红桃/黑桃同花或顺子，让Lusty Joker与Splash走非方片路线；②立刻卖掉Greedy Joker换取+筹码小丑（如Bull/Blue Joker）或独立×Mult（Cavendish/Constellation）；③把$40在商店换成玻璃牌/钢铁牌或木星/土星星球牌，靠牌面自身的×2与等级硬斩4000。核心是绝不能带着'单一花色依赖+纯加法'阵容硬碰削弱该花色的BOSS。",
@@ -20,7 +20,10 @@
     "The Eye": "The Eye禁止重复牌型：提前规划高牌→对子→两对→三条→顺子/同花等不重复序列；弃牌只找下一不同牌型；小丑换成通用×Mult，别靠对子/红心条件。",
     "The Mark": "The Mark会隐藏所有人头牌，背面J/Q/K无法确认花色，别赌Ancient；弃掉背面人头，只打可见Ancient花色的牌凑同花/两对/三条。可见花色不足时，改打可见非人头高点数对子/三条，靠Blue Joker撑筹码、Supernova吃出牌次数，商店优先买同花星球与xMult，不再死存$25。",
     "The Mouth": "The Mouth只锁牌型不锁弃牌：进BOSS前选牌组最易重复的牌型（对子/三条/同花），用弃牌过滤杂牌；若坚持顺子，必须留万能牌/百搭并避免消耗手牌K，Baron要围绕K留手，否则单x1.5推不过1600。",
-    "The Arm": "The Arm战中首手即出最高分牌型，靠×Mult小丑配合红蜡封/钢铁/玻璃爆发，避免多手被连续削级；进BOSS前存钱买×Mult，不要依赖已升级同花等级。"
+    "The Arm": "The Arm战中首手即出最高分牌型，靠×Mult小丑配合红蜡封/钢铁/玻璃爆发，避免多手被连续削级；进BOSS前存钱买×Mult，不要依赖已升级同花等级。",
+    "The House": "The House首抽背面时不要赌牌型：进BOSS前保留弃牌次数，第一手直接全弃等正面手牌；之后按Wily→Abstract→Supernova→Constellation打已升级的三条/同花。若输出不足，宁可牺牲部分利息也要在BOSS前买第二张×Mult或双色玻璃牌。",
+    "The Head": "The Head战：红桃牌被削弱且通常不计分，切勿以红桃作为同花/对子核心；优先用黑桃/梅花/方块凑同花或顺子，必要时用万能牌/塔罗改花色，并保留手数进店补+Mult小丑。",
+    "The Flint": "The Flint只减半牌型基础筹码/倍率，小丑加成不受影响。进BOSS前必须卖废牌把Campfire养成x3+并留$10+买xMult；BOSS战弃牌强找顺子，每手靠Devious +100筹码，小丑摆Devious→Campfire，杜绝对子/高牌/两对；若未达标应提前转型或放弃刷分保钱。"
   },
   "history": [
     {
@@ -273,6 +276,54 @@
       "bossName": "The Arm",
       "rootCause": "经济断流导致无×Mult，只有筹码与加法倍率，The Arm削牌型后分数上限不足4000。",
       "lesson": "底注3前必拿至少一张×Mult小丑，缺它不硬闯BOSS。"
+    },
+    {
+      "runId": 16,
+      "timestamp": "2026-09-29T07:41:00.129Z",
+      "reachedAnte": 4,
+      "reachedRound": 11,
+      "finalMoney": 34,
+      "finalScore": 2700,
+      "targetScore": 10000,
+      "jokers": [
+        "Wily Joker",
+        "Abstract Joker",
+        "8 Ball",
+        "Supernova",
+        "Constellation"
+      ],
+      "bossName": "The House",
+      "rootCause": "缺乏强×Mult且Constellation未成长，牌型分散稀释Supernova，低分对子/两对打太多，第4底注BOSS输出仅2700远低于10000。",
+      "lesson": "专注升级同花/三条，底注4前必成强×Mult，禁打对子两对。"
+    },
+    {
+      "runId": 17,
+      "timestamp": "2026-09-29T07:42:49.592Z",
+      "reachedAnte": 1,
+      "reachedRound": 2,
+      "finalMoney": 3,
+      "finalScore": 344,
+      "targetScore": 600,
+      "jokers": [],
+      "bossName": "The Head",
+      "rootCause": "零小丑裸奔，无+Mult/xMult引擎，还连打4手低基础两对，且未针对The Head规避红桃，导致600分差256。",
+      "lesson": "前期先买+Mult小丑，禁连打两对，BOSS避红桃核心"
+    },
+    {
+      "runId": 18,
+      "timestamp": "2026-09-29T07:46:19.285Z",
+      "reachedAnte": 2,
+      "reachedRound": 4,
+      "finalMoney": 1,
+      "finalScore": 782,
+      "targetScore": 1600,
+      "jokers": [
+        "Devious Joker",
+        "Campfire"
+      ],
+      "bossName": "The Flint",
+      "rootCause": "经济断流至$1导致Campfire无法卖牌成长、缺少xMult，且在The Flint减半下大量打对子/高牌等低基础牌型，既不触发Devious Joker也吃满减半惩罚，782分必然崩盘。",
+      "lesson": "Flint战只打顺子触发Devious，禁对子高牌，先攒钱补xMult。"
     }
   ]
 }

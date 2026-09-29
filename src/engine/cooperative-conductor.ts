@@ -673,7 +673,10 @@ export class CooperativeConductor {
       bossConstraint,
       state.jokers?.cards || [],
       state.money || 0,
-      this.selfCorrection
+      this.selfCorrection,
+      state.deck,
+      state.consumables?.cards || (state as any).consumeables?.cards || [],
+      state.round?.hands_played || 0
     );
 
     // Let Jev System 1 make the tactical choice
@@ -695,16 +698,16 @@ export class CooperativeConductor {
           remainingDiscards: state.round?.discards_left || 0,
           remainingHands: state.round?.hands_left || 1,
           money: state.money || 0,
+          handsPlayedThisRound: state.round?.hands_played || 0,
+          bossName: isBossActive ? bossName : undefined,
+          deck: state.deck,
+          consumables: state.consumables?.cards || (state as any).consumeables?.cards || [],
+          mouthLockedHandType: this.mouthLockedHandType,
+          eyePlayedHandTypes: this.eyePlayedHandTypes,
         }
       );
 
-      // In-hand steel cards bonus
-      const heldIndices = cards.map((_, i) => i).filter(i => !playedCards.includes(i));
-      let steelCount = 0;
-      for (const h of heldIndices) {
-        if (getCardModifiers(cards[h]).isSteel) steelCount++;
-      }
-      const rawTheoreticalScore = Math.round(playedEval.totalScore * Math.pow(1.5, steelCount));
+      const rawTheoreticalScore = playedEval.totalScore;
       const calibratedScore = this.selfCorrection.applyCalibration(rawTheoreticalScore, playedEval.handType);
 
       this.selfCorrection.recordPendingPlay(
