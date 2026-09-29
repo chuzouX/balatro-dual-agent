@@ -146,4 +146,58 @@ if (playMouth.length > 0 && playMouth.every(c => c.handType === 'Two Pair')) {
   console.error(pc.red(`❌ 存在非 Two Pair 的出牌候选: ${playMouth.map(c => c.handType).join(', ')}`));
 }
 
+// Test 9: Joker Scoring Integration Test (Pair of 3s with +15 Mult and x2 Mult)
+const pairCardsSample: Card[] = [
+  { id: 1, label: '3 of Spades', value: { rank: '3', suit: 'S' } },
+  { id: 2, label: '3 of Diamonds', value: { rank: '3', suit: 'D' } },
+  { id: 3, label: 'Ace of Hearts', value: { rank: 'A', suit: 'H' } },
+  { id: 4, label: 'King of Clubs', value: { rank: 'K', suit: 'C' } },
+];
+const sampleJokers: Card[] = [
+  { id: 101, key: 'j_gros_michel', label: 'Gros Michel', value: { effect: '+15 Mult' } },
+  { id: 102, key: 'j_the_duo', label: 'The Duo', value: { effect: 'x2 Mult for Pair' } },
+];
+const evalWithJokers = PokerEvaluator.evaluateCombination(pairCardsSample, [0, 1], undefined, sampleJokers);
+console.log(pc.green(`测试 9 - 小丑加成得分计算测试 (Pair of 3s + Gros Michel + The Duo):`));
+console.log(`  预估得分: ${evalWithJokers.totalScore}分 (${evalWithJokers.chips}筹码 × ${evalWithJokers.mult}倍率)`);
+if (evalWithJokers.totalScore >= 500) {
+  console.log(pc.green(`✓ 成功！对子从裸分 32 分准确提升至 ${evalWithJokers.totalScore} 分 (精确计入 +15Mult 与 x2Mult 小丑加成)！`));
+} else {
+  console.error(pc.red(`❌ 小丑加成未生效，仅得分: ${evalWithJokers.totalScore}`));
+}
+
+// Test 10: 4-Spade Flush Protection & Play-to-Discard Test
+const cardsAnte3SmallBlind: Card[] = [
+  { id: 1, label: 'Ace of Diamonds', value: { rank: 'A', suit: 'D' } },
+  { id: 2, label: 'Queen of Spades', value: { rank: 'Q', suit: 'S' } },
+  { id: 3, label: 'Jack of Hearts', value: { rank: 'J', suit: 'H' } },
+  { id: 4, label: '8 of Spades', value: { rank: '8', suit: 'S' } },
+  { id: 5, label: '7 of Spades', value: { rank: '7', suit: 'S' } },
+  { id: 6, label: '5 of Spades', value: { rank: '5', suit: 'S' } },
+  { id: 7, label: '3 of Hearts', value: { rank: '3', suit: 'H' } },
+  { id: 8, label: '2 of Clubs', value: { rank: '2', suit: 'C' } },
+];
+const candidates10 = PokerEvaluator.generateCandidates(
+  cardsAnte3SmallBlind,
+  7,
+  0,
+  2000,
+  0,
+  undefined,
+  'Flush',
+  undefined,
+  sampleJokers
+);
+console.log(pc.green(`测试 10 - 零弃牌时【以打代弃】与 4 黑桃同花保护测试:`));
+const topCandidate = candidates10[0];
+console.log(`  最佳候选: (${topCandidate.type.toUpperCase()}) ${topCandidate.cardsSummary} -> ${topCandidate.reason}`);
+// Verify that none of the Spades (Q♠, 8♠, 7♠, 5♠ - indices 1, 3, 4, 5) were included in the junk discard play
+const spadeIndices = [1, 3, 4, 5];
+const hasSacrificedSpade = topCandidate.cardIndices.some(idx => spadeIndices.includes(idx));
+if (!hasSacrificedSpade) {
+  console.log(pc.green('✓ 成功！所有 4 张核心黑桃同花牌均被 100% 保护，AI 自动打出 4 张非黑桃杂牌以打代弃过牌换牌！'));
+} else {
+  console.error(pc.red(`❌ 核心黑桃牌被误打出: ${topCandidate.cardsSummary}`));
+}
+
 console.log(pc.bold(pc.green('\n🎉 评估引擎自检全部通过！\n')));

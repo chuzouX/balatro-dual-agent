@@ -101,10 +101,241 @@ export class PokerEvaluator {
   /**
    * Evaluate a specific combination of cards (up to 5 cards) based on Balatro 1.0.1o rules
    */
+  /**
+   * Calculate Joker bonuses (Chips, Flat Mult, XMult) for the given hand
+   */
+  static evaluateJokers(
+    jokers: Card[],
+    context: {
+      handType: string;
+      scoringCards: Card[];
+      allPlayedCards: Card[];
+      heldCards: Card[];
+      remainingDiscards: number;
+      remainingHands: number;
+      money: number;
+    }
+  ): { flatChips: number; flatMult: number; xMult: number } {
+    let flatChips = 0;
+    let flatMult = 0;
+    let xMult = 1.0;
+
+    if (!jokers || jokers.length === 0) {
+      return { flatChips, flatMult, xMult };
+    }
+
+    // Resolve Blueprint & Brainstorm: copy target joker abilities
+    const effectiveJokers: Card[] = [...jokers];
+    for (let i = 0; i < effectiveJokers.length; i++) {
+      const j = effectiveJokers[i];
+      const key = (j.key || '').toLowerCase();
+      const label = (j.label || '').toLowerCase();
+
+      if (key.includes('blueprint') || label.includes('blueprint')) {
+        if (i + 1 < jokers.length) {
+          effectiveJokers[i] = { ...jokers[i + 1], id: j.id };
+        }
+      } else if (key.includes('brainstorm') || label.includes('brainstorm')) {
+        if (jokers.length > 0 && jokers[0] !== j) {
+          effectiveJokers[i] = { ...jokers[0], id: j.id };
+        }
+      }
+    }
+
+    // 1. Scoring Cards Trigger Jokers
+    for (const card of context.scoringCards) {
+      const rank = card.value?.rank || '2';
+      const suit = card.value?.suit || 'S';
+      const isFace = rank === 'J' || rank === 'Q' || rank === 'K';
+      const isAce = rank === 'A';
+      const isOdd = ['A', '9', '7', '5', '3'].includes(rank);
+      const isEven = ['2', '4', '6', '8', '10'].includes(rank);
+      const isFibonacci = ['A', '2', '3', '5', '8'].includes(rank);
+
+      for (const j of effectiveJokers) {
+        const key = (j.key || '').toLowerCase();
+        const label = (j.label || '').toLowerCase();
+
+        if (isFace) {
+          if (key.includes('scary_face') || label.includes('scary face')) flatChips += 30;
+          if (key.includes('smiley_face') || label.includes('smiley face')) flatMult += 5;
+          if (key.includes('photograph') || label.includes('photograph')) xMult *= 2.0;
+        }
+
+        if (isAce && (key.includes('scholar') || label.includes('scholar'))) {
+          flatChips += 20;
+          flatMult += 4;
+        }
+
+        if ((rank === '10' || rank === '4') && (key.includes('walkie_talkie') || label.includes('walkie talkie'))) {
+          flatChips += 10;
+          flatMult += 4;
+        }
+
+        if (isFibonacci && (key.includes('fibonacci') || label.includes('fibonacci'))) {
+          flatMult += 8;
+        }
+
+        if (isEven && (key.includes('even_steven') || label.includes('even steven'))) {
+          flatMult += 4;
+        }
+
+        if (isOdd && (key.includes('odd_todd') || label.includes('odd todd'))) {
+          flatChips += 31;
+        }
+
+        // Suit triggers
+        if (suit === 'H') {
+          if (key.includes('lusty') || label.includes('lusty')) flatMult += 3;
+          if (key.includes('bloodstone') || label.includes('bloodstone')) xMult *= 1.5;
+        } else if (suit === 'S') {
+          if (key.includes('wrathful') || label.includes('wrathful')) flatMult += 3;
+          if (key.includes('arrowhead') || label.includes('arrowhead')) flatChips += 50;
+        } else if (suit === 'C') {
+          if (key.includes('gluttonous') || label.includes('gluttonous')) flatMult += 3;
+          if (key.includes('onyx') || label.includes('onyx')) flatMult += 7;
+        } else if (suit === 'D') {
+          if (key.includes('dapper') || label.includes('dapper')) flatMult += 3;
+        }
+      }
+    }
+
+    // Hanging Chad: retriggers first scoring card 2 times
+    const hasHangingChad = effectiveJokers.some(j => (j.key || '').includes('hanging_chad') || (j.label || '').includes('hanging chad'));
+    if (hasHangingChad && context.scoringCards.length > 0) {
+      const firstCard = context.scoringCards[0];
+      const rank = firstCard.value?.rank || '2';
+      const rankVal = RANK_VALUES[rank] || 2;
+      flatChips += rankVal * 2;
+    }
+
+    // 2. In-Hand Held Cards Jokers
+    for (const card of context.heldCards) {
+      const rank = card.value?.rank || '2';
+      for (const j of effectiveJokers) {
+        const key = (j.key || '').toLowerCase();
+        const label = (j.label || '').toLowerCase();
+        if (rank === 'K' && (key.includes('baron') || label.includes('baron'))) {
+          xMult *= 1.5;
+        }
+        if (rank === 'Q' && (key.includes('shoot_the_moon') || label.includes('shoot the moon'))) {
+          flatMult += 13;
+        }
+      }
+    }
+
+    // 3. Global Independent Jokers
+    for (const j of effectiveJokers) {
+      const key = (j.key || '').toLowerCase();
+      const label = (j.label || '').toLowerCase();
+      const ability = j.ability || {};
+
+      // Edition bonuses on Joker itself
+      const edition = (j.modifier as any)?.edition?.toLowerCase() ||
+        (Array.isArray(j.modifier) ? j.modifier.join(' ').toLowerCase() : '');
+      if (edition.includes('foil')) flatChips += 50;
+      if (edition.includes('holo')) flatMult += 10;
+      if (edition.includes('poly')) xMult *= 1.5;
+
+      // Chip Jokers
+      if (key.includes('ice_cream') || label.includes('ice cream')) {
+        flatChips += ability.chips || ability.extra || 100;
+      } else if (key.includes('blue_joker') || label.includes('blue joker')) {
+        flatChips += 50;
+      } else if (key.includes('banner') || label.includes('banner')) {
+        flatChips += 30 * context.remainingDiscards;
+      } else if (key.includes('bull') || label.includes('bull')) {
+        flatChips += 2 * context.money;
+      } else if (key.includes('castle') || label.includes('castle')) {
+        flatChips += ability.chips || ability.extra || 30;
+      } else if (key.includes('sly') && context.handType.includes('Pair')) {
+        flatChips += 50;
+      } else if (key.includes('wily') && context.handType.includes('Three of a Kind')) {
+        flatChips += 100;
+      } else if (key.includes('clever') && context.handType === 'Two Pair') {
+        flatChips += 80;
+      } else if (key.includes('devious') && context.handType === 'Straight') {
+        flatChips += 100;
+      } else if (key.includes('crafty') && context.handType === 'Flush') {
+        flatChips += 80;
+      }
+
+      // Flat Mult Jokers
+      if (key.includes('gros_michel') || label.includes('gros michel')) {
+        flatMult += 15;
+      } else if (key.includes('popcorn') || label.includes('popcorn')) {
+        flatMult += ability.mult || ability.extra || 20;
+      } else if (key.includes('half') || label.includes('half')) {
+        if (context.allPlayedCards.length <= 3) flatMult += 20;
+      } else if (key.includes('mystic_summit') || label.includes('mystic summit')) {
+        if (context.remainingDiscards === 0) flatMult += 15;
+      } else if (key.includes('misprint') || label.includes('misprint')) {
+        flatMult += 11;
+      } else if (key.includes('swashbuckler') || label.includes('swashbuckler')) {
+        flatMult += 10;
+      } else if (key.includes('supernova') || label.includes('supernova')) {
+        flatMult += ability.mult || 6;
+      } else if (key.includes('fortune_teller') || label.includes('fortune teller')) {
+        flatMult += ability.mult || 8;
+      } else if (key.includes('green_joker') || label.includes('green joker')) {
+        flatMult += ability.mult || 10;
+      } else if (key.includes('jolly') && context.handType.includes('Pair')) {
+        flatMult += 8;
+      } else if (key.includes('zany') && context.handType.includes('Three of a Kind')) {
+        flatMult += 12;
+      } else if (key.includes('mad') && context.handType === 'Two Pair') {
+        flatMult += 10;
+      } else if (key.includes('crazy') && context.handType === 'Straight') {
+        flatMult += 12;
+      } else if (key.includes('droll') && context.handType === 'Flush') {
+        flatMult += 10;
+      } else if (ability.mult) {
+        flatMult += ability.mult;
+      }
+
+      // XMult Jokers
+      if (key.includes('cavendish') || label.includes('cavendish')) {
+        xMult *= 3.0;
+      } else if (key.includes('the_duo') && context.handType.includes('Pair')) {
+        xMult *= 2.0;
+      } else if (key.includes('the_trio') && context.handType.includes('Three of a Kind')) {
+        xMult *= 3.0;
+      } else if (key.includes('the_family') && context.handType.includes('Four of a Kind')) {
+        xMult *= 4.0;
+      } else if (key.includes('the_order') && context.handType === 'Straight') {
+        xMult *= 3.0;
+      } else if (key.includes('the_tribe') && context.handType === 'Flush') {
+        xMult *= 2.0;
+      } else if (key.includes('card_sharp') || label.includes('card sharp')) {
+        xMult *= 3.0;
+      } else if (key.includes('blackboard') || label.includes('blackboard')) {
+        const allSpadesOrClubs = context.heldCards.every(c => c.value?.suit === 'S' || c.value?.suit === 'C');
+        if (allSpadesOrClubs) xMult *= 3.0;
+      } else if (key.includes('acrobat') && context.remainingHands === 1) {
+        xMult *= 3.0;
+      } else if (ability.x_mult) {
+        xMult *= ability.x_mult;
+      } else if (key.includes('constellation') || key.includes('vampire') || key.includes('hologram') || key.includes('obelisk') || key.includes('campfire') || key.includes('lucky_cat') || key.includes('steel_joker')) {
+        xMult *= ability.extra_x_mult || ability.extra || 1.5;
+      }
+    }
+
+    return { flatChips, flatMult, xMult };
+  }
+
+  /**
+   * Evaluate a specific combination of cards (up to 5 cards) based on Balatro 1.0.1o rules
+   */
   static evaluateCombination(
     cards: Card[],
     indices: number[],
-    handLevels?: Record<string, PokerHandInfo>
+    handLevels?: Record<string, PokerHandInfo>,
+    jokers?: Card[],
+    jokerContext?: {
+      remainingDiscards?: number;
+      remainingHands?: number;
+      money?: number;
+    }
   ): EvaluatedPokerHand {
     const selected = indices.map(idx => cards[idx]);
     if (selected.length === 0 || selected.length > 5) {
@@ -255,13 +486,33 @@ export class PokerEvaluator {
       }
     }
 
-    const totalChips = handChips + extraChips;
-    const totalMult = Math.round((handMult + extraMult) * xMultProduct);
+    // Evaluate Joker contribution
+    const scoringCards = scoringIndices.map(i => cards[i]);
+    const allPlayedCards = indices.map(i => cards[i]);
+    const heldCards = cards.filter((_, i) => !indices.includes(i));
+
+    const jokerBonus = this.evaluateJokers(jokers || [], {
+      handType,
+      scoringCards,
+      allPlayedCards,
+      heldCards,
+      remainingDiscards: jokerContext?.remainingDiscards ?? 0,
+      remainingHands: jokerContext?.remainingHands ?? 1,
+      money: jokerContext?.money ?? 0,
+    });
+
+    const totalChips = handChips + extraChips + jokerBonus.flatChips;
+    const totalMult = Math.round(((handMult + extraMult + jokerBonus.flatMult) * xMultProduct) * jokerBonus.xMult);
     const totalScore = totalChips * totalMult;
 
     const cardsStr = indices
       .map(i => `${cards[i].value?.rank || '?'}${cards[i].value?.suit || '?'}`)
       .join(' ');
+
+    let desc = `${handType} [${cardsStr}] (${totalChips}×${totalMult} = ${totalScore}分)`;
+    if (jokerBonus.flatMult > 0 || jokerBonus.xMult > 1 || jokerBonus.flatChips > 0) {
+      desc += ` 🤡[+${jokerBonus.flatChips}筹码 +${jokerBonus.flatMult}Mult x${jokerBonus.xMult.toFixed(1)}]`;
+    }
 
     return {
       handType,
@@ -269,7 +520,7 @@ export class PokerEvaluator {
       chips: totalChips,
       mult: totalMult,
       totalScore,
-      description: `${handType} [${cardsStr}] (${totalChips}×${totalMult} = ${totalScore}分)`,
+      description: desc,
     };
   }
 
@@ -288,7 +539,9 @@ export class PokerEvaluator {
       bossName?: string;
       mouthLockedHandType?: string | null;
       eyePlayedHandTypes?: Set<string>;
-    }
+    },
+    jokers?: Card[],
+    money?: number
   ): HandCandidate[] {
     const n = cards.length;
     const candidates: HandCandidate[] = [];
@@ -310,6 +563,9 @@ export class PokerEvaluator {
     }
     backtrack(0, []);
 
+    // Prioritize 5-card combinations first so larger hands are evaluated before 1-card plays
+    playCombos.sort((a, b) => b.length - a.length);
+
     // Suit groupings
     const suitGroups: Record<string, number[]> = {};
     for (let i = 0; i < n; i++) {
@@ -318,12 +574,29 @@ export class PokerEvaluator {
       suitGroups[s].push(i);
     }
 
-    // Evaluate all collected play combinations
+    // Identify dominant suit to protect (Flush potential: suit with >= 3 cards, or matching primaryHandType)
+    let dominantSuit: string | null = null;
+    let maxSuitCount = 0;
+    for (const [s, idxs] of Object.entries(suitGroups)) {
+      if (idxs.length >= 3 && idxs.length > maxSuitCount) {
+        dominantSuit = s;
+        maxSuitCount = idxs.length;
+      }
+    }
+    const protectedFlushIndices = new Set<number>(dominantSuit ? suitGroups[dominantSuit] : []);
+
+    const jokerContext = {
+      remainingDiscards,
+      remainingHands,
+      money: money || 0,
+    };
+
+    // Evaluate all collected play combinations with Joker bonuses
     let evaluatedPlays: (EvaluatedPokerHand & { indices: number[] })[] = [];
     const seenHandFingerprints = new Set<string>();
 
     for (const combo of playCombos) {
-      const evalResult = this.evaluateCombination(cards, combo, handLevels);
+      const evalResult = this.evaluateCombination(cards, combo, handLevels, jokers, jokerContext);
       // Group by handType + scoring indices fingerprint to avoid redundant plays
       const scoringKey = `${evalResult.handType}:${evalResult.scoringCardIndices.sort().join(',')}`;
       if (seenHandFingerprints.has(scoringKey)) continue;
@@ -390,6 +663,36 @@ export class PokerEvaluator {
         reasonText += ` 🪐[手持蓝色蜡封: 终局结算自动获取专属星球牌！]`;
       }
 
+      let playIndices = [...p.indices];
+      let paddedCount = 0;
+
+      // Intelligent Junk Padding (以打代弃):
+      // If hand cannot one-shot the blind and we have extra hands remaining, pad with non-core junk cards (up to 5)
+      // to discard junk and draw fresh cards without touching protected Flush or Steel cards!
+      if (!canOneShot && remainingHands > 1 && playIndices.length < 5) {
+        const availableJunk = cards
+          .map((c, i) => ({ c, i, mod: getCardModifiers(c) }))
+          .filter(x =>
+            !playIndices.includes(x.i) &&
+            !protectedFlushIndices.has(x.i) &&
+            !x.mod.isSteel &&
+            !x.mod.hasBlueSeal
+          )
+          .map(x => x.i);
+
+        const padNeeded = Math.min(5 - playIndices.length, availableJunk.length);
+        if (padNeeded > 0) {
+          availableJunk.sort((a, b) => (RANK_ORDER[cards[a].value?.rank || '2'] || 0) - (RANK_ORDER[cards[b].value?.rank || '2'] || 0));
+          const padding = availableJunk.slice(0, padNeeded);
+          playIndices = [...playIndices, ...padding];
+          paddedCount = padNeeded;
+        }
+      }
+
+      if (paddedCount > 0) {
+        reasonText += ` 🧹[垫掉${paddedCount}张杂牌加速洗牌]`;
+      }
+
       let priority = adjustedScore;
       if (canOneShot) {
         priority += 100000 + remainingHands * 500;
@@ -409,8 +712,8 @@ export class PokerEvaluator {
 
       candidates.push({
         type: 'play',
-        cardIndices: p.indices,
-        cardsSummary: p.indices.map(i => `${cards[i].value?.rank || '?'}${SUIT_NAMES[cards[i].value?.suit || 'S'] || ''}`).join(' '),
+        cardIndices: playIndices,
+        cardsSummary: playIndices.map(i => `${cards[i].value?.rank || '?'}${SUIT_NAMES[cards[i].value?.suit || 'S'] || ''}`).join(' '),
         handType: p.handType,
         estimatedChips: p.chips,
         estimatedMult: Math.round(p.mult * steelMultiplier),
@@ -418,6 +721,37 @@ export class PokerEvaluator {
         reason: reasonText,
         priorityScore: priority,
       });
+    }
+
+    // Dedicated Play-to-Discard (以打代弃·强力换牌) when 0 discards and best play is not lethal
+    if (remainingDiscards === 0 && remainingHands > 1) {
+      const topPlayScore = topPlays[0]?.totalScore || 0;
+      if (topPlayScore < scoreNeeded * 0.6) {
+        const junkToDiscard = cards
+          .map((c, i) => ({ c, i, mod: getCardModifiers(c) }))
+          .filter(x =>
+            !protectedFlushIndices.has(x.i) &&
+            !x.mod.isSteel &&
+            !x.mod.hasBlueSeal
+          )
+          .map(x => x.i);
+
+        if (junkToDiscard.length >= 2) {
+          const discardFive = junkToDiscard.slice(0, 5);
+          const evalJunk = this.evaluateCombination(cards, discardFive, handLevels, jokers, jokerContext);
+          candidates.push({
+            type: 'play',
+            cardIndices: discardFive,
+            cardsSummary: discardFive.map(i => `${cards[i].value?.rank || '?'}${SUIT_NAMES[cards[i].value?.suit || 'S'] || ''}`).join(' '),
+            handType: evalJunk.handType,
+            estimatedChips: evalJunk.chips,
+            estimatedMult: evalJunk.mult,
+            estimatedScore: evalJunk.totalScore,
+            reason: `🧹【以打代弃·强力换牌】打出 ${discardFive.length} 张杂牌过牌换牌 (完美保留 ${protectedFlushIndices.size} 张核心${dominantSuit ? SUIT_NAMES[dominantSuit] : ''}，摸满新牌冲刺同花/大牌！)`,
+            priorityScore: 3500 + discardFive.length * 200,
+          });
+        }
+      }
     }
 
     // 2. Evaluate Discards (if discards remaining)

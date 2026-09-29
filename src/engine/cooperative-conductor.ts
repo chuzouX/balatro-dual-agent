@@ -653,7 +653,7 @@ export class CooperativeConductor {
         }
       : undefined;
 
-    // Generate ranked tactical candidates (aligned with primaryHandType and held Steel cards)
+    // Generate ranked tactical candidates (aligned with primaryHandType, Jokers, and held Steel cards)
     const candidates = PokerEvaluator.generateCandidates(
       cards,
       state.round?.hands_left || 1,
@@ -662,7 +662,9 @@ export class CooperativeConductor {
       currentScore,
       state.hands,
       this.currentStrategy?.primaryHandType,
-      bossConstraint
+      bossConstraint,
+      state.jokers?.cards || [],
+      state.money || 0
     );
 
     // Let Jev System 1 make the tactical choice

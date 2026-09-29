@@ -79,12 +79,12 @@ export class JevAgent {
       };
     }
 
-    // 4. Zero discards left (Must play card):
-    if ((state.round?.discards_left || 0) <= 0 && top.type === 'play') {
+    // 4. Only one play candidate available:
+    if (candidates.length === 1 && top.type === 'play') {
       return {
         action: 'play',
         params: { cards: top.cardIndices },
-        reason: `[零弃牌直觉] 弃牌次数已用尽，果断打出最佳牌型: ${top.reason}`,
+        reason: `[唯一可行出牌] ${top.reason}`,
         confidence: 1.0,
         source: 'tactical_fast_path',
       };
