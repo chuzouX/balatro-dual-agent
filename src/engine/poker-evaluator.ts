@@ -285,10 +285,22 @@ export function resolveEffectiveJokers(jokers: Card[]): ResolvedJoker[] {
   if (!jokers || jokers.length === 0) return [];
 
   const getEdition = (j: Card): string => {
-    return (
-      (j.modifier as any)?.edition ||
-      (Array.isArray(j.modifier) ? j.modifier.join(' ') : (j.modifier || ''))
-    ).toLowerCase();
+    if (!j || !j.modifier) return '';
+    const mod = j.modifier as any;
+    if (typeof mod?.edition === 'string') {
+      return mod.edition.toLowerCase();
+    }
+    if (Array.isArray(mod)) {
+      return mod.map(m => String(m)).join(' ').toLowerCase();
+    }
+    if (typeof mod === 'string') {
+      return mod.toLowerCase();
+    }
+    try {
+      return JSON.stringify(mod).toLowerCase();
+    } catch {
+      return '';
+    }
   };
 
   const findTarget = (startIndex: number, visited: Set<number>, isBrainstorm: boolean): Card | null => {

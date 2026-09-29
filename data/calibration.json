@@ -1,86 +1,17 @@
 {
-  "totalCalibrations": 97,
-  "globalSynergyFactor": 1.01,
+  "totalCalibrations": 104,
+  "globalSynergyFactor": 0.37,
   "handTypeFactors": {
-    "Flush": 1.08,
+    "Flush": 0.51,
     "Full House": 1.16,
     "Straight": 0.87,
     "Three of a Kind": 1.04,
-    "Two Pair": 1.09,
-    "Pair": 1,
+    "Two Pair": 0.4,
+    "Pair": 0.49,
     "High Card": 1,
     "Straight Flush": 1
   },
   "recentRecords": [
-    {
-      "handType": "Straight",
-      "estimatedScore": 642,
-      "actualScore": 620,
-      "ratio": 0.67,
-      "delta": -22,
-      "jokers": [
-        "Devious Joker",
-        "Campfire"
-      ],
-      "timestamp": "2026-09-29T07:46:05.702Z"
-    },
-    {
-      "handType": "Flush",
-      "estimatedScore": 262,
-      "actualScore": 288,
-      "ratio": 1,
-      "delta": 26,
-      "jokers": [],
-      "timestamp": "2026-09-29T07:46:53.941Z"
-    },
-    {
-      "handType": "Two Pair",
-      "estimatedScore": 77,
-      "actualScore": 92,
-      "ratio": 1,
-      "delta": 15,
-      "jokers": [],
-      "timestamp": "2026-09-29T07:47:00.353Z"
-    },
-    {
-      "handType": "Flush",
-      "estimatedScore": 291,
-      "actualScore": 300,
-      "ratio": 1,
-      "delta": 9,
-      "jokers": [],
-      "timestamp": "2026-09-29T07:47:24.649Z"
-    },
-    {
-      "handType": "Two Pair",
-      "estimatedScore": 98,
-      "actualScore": 104,
-      "ratio": 1,
-      "delta": 6,
-      "jokers": [],
-      "timestamp": "2026-09-29T07:47:31.945Z"
-    },
-    {
-      "handType": "Flush",
-      "estimatedScore": 253,
-      "actualScore": 256,
-      "ratio": 1,
-      "delta": 3,
-      "jokers": [],
-      "timestamp": "2026-09-29T07:47:38.333Z"
-    },
-    {
-      "handType": "High Card",
-      "estimatedScore": 16,
-      "actualScore": 16,
-      "ratio": 1,
-      "delta": 0,
-      "jokers": [
-        "Burglar",
-        "Clever Joker"
-      ],
-      "timestamp": "2026-09-29T07:48:27.294Z"
-    },
     {
       "handType": "Pair",
       "estimatedScore": 34,
@@ -389,6 +320,82 @@
         "Lusty Joker"
       ],
       "timestamp": "2026-09-29T07:54:32.457Z"
+    },
+    {
+      "handType": "Flush",
+      "estimatedScore": 259,
+      "actualScore": 244,
+      "ratio": 1,
+      "delta": -15,
+      "jokers": [],
+      "timestamp": "2026-09-29T09:11:57.948Z"
+    },
+    {
+      "handType": "Pair",
+      "estimatedScore": 60,
+      "actualScore": 60,
+      "ratio": 1,
+      "delta": 0,
+      "jokers": [],
+      "timestamp": "2026-09-29T09:12:04.352Z"
+    },
+    {
+      "handType": "Flush",
+      "estimatedScore": 722,
+      "actualScore": 308,
+      "ratio": 0.44,
+      "delta": -414,
+      "jokers": [
+        "Wily Joker"
+      ],
+      "timestamp": "2026-09-29T09:12:36.090Z"
+    },
+    {
+      "handType": "Pair",
+      "estimatedScore": 219,
+      "actualScore": 36,
+      "ratio": 0.15,
+      "delta": -183,
+      "jokers": [
+        "Wily Joker"
+      ],
+      "timestamp": "2026-09-29T09:12:41.034Z"
+    },
+    {
+      "handType": "Flush",
+      "estimatedScore": 426,
+      "actualScore": 276,
+      "ratio": 0.41,
+      "delta": -150,
+      "jokers": [
+        "Wily Joker"
+      ],
+      "timestamp": "2026-09-29T09:12:47.440Z"
+    },
+    {
+      "handType": "Two Pair",
+      "estimatedScore": 956,
+      "actualScore": 600,
+      "ratio": 0.57,
+      "delta": -356,
+      "jokers": [
+        "Wily Joker",
+        "Smiley Face"
+      ],
+      "timestamp": "2026-09-29T09:13:13.055Z"
+    },
+    {
+      "handType": "Two Pair",
+      "estimatedScore": 2835,
+      "actualScore": 600,
+      "ratio": 0.15,
+      "delta": -2235,
+      "jokers": [
+        "Wily Joker",
+        "Smiley Face",
+        "Half Joker"
+      ],
+      "timestamp": "2026-09-29T09:17:02.351Z"
     }
   ],
   "anomalies": []

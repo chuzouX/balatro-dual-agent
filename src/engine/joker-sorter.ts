@@ -22,8 +22,15 @@ export class JokerSorter {
     const key = (joker.key || '').toLowerCase();
     const label = (joker.label || '').toLowerCase();
     const effect = (joker.value?.effect || '').toLowerCase();
-    const edition = (joker.modifier as any)?.edition?.toLowerCase() ||
-      (Array.isArray(joker.modifier) ? joker.modifier.join(' ').toLowerCase() : '');
+    const mod = joker.modifier as any;
+    let edition = '';
+    if (typeof mod?.edition === 'string') {
+      edition = mod.edition.toLowerCase();
+    } else if (Array.isArray(mod)) {
+      edition = mod.map(m => String(m)).join(' ').toLowerCase();
+    } else if (typeof mod === 'string') {
+      edition = mod.toLowerCase();
+    }
 
     // 1. Copy Jokers (Blueprint & Brainstorm)
     if (key.includes('blueprint') || label.includes('blueprint')) {
