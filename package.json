@@ -5,11 +5,11 @@
   "type": "module",
   "main": "src/index.ts",
   "scripts": {
-    "start": "tsx src/index.ts",
-    "play": "tsx src/index.ts",
-    "test:api": "tsx src/test-api.ts",
-    "test:hand": "tsx src/engine/test-hand.ts",
-    "test:network": "tsx src/test-proxy.ts"
+    "start": "tsx --no-warnings src/index.ts",
+    "play": "tsx --no-warnings src/index.ts",
+    "test:api": "tsx --no-warnings src/test-api.ts",
+    "test:hand": "tsx --no-warnings src/engine/test-hand.ts",
+    "test:network": "tsx --no-warnings src/test-proxy.ts"
   },
   "keywords": [
     "balatro",
