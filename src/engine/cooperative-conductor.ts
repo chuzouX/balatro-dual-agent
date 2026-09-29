@@ -6,6 +6,7 @@ import { JokerSorter } from './joker-sorter.js';
 import { GameState, StrategicDirective } from '../types.js';
 import { MemoryManager } from './memory-manager.js';
 import { PLANET_HAND_MAP } from './rules.js';
+import { SelfCorrectionEngine } from './self-correction-engine.js';
 import { config } from '../config.js';
 import path from 'path';
 import fs from 'fs';
@@ -16,6 +17,7 @@ export class CooperativeConductor {
   private deepseek: DeepSeekAgent;
   private jev: JevAgent;
   private memory: MemoryManager;
+  private selfCorrection: SelfCorrectionEngine;
   private currentStrategy: StrategicDirective | null = null;
   private isRunning = false;
   private lastCapturedState = '';
@@ -29,6 +31,7 @@ export class CooperativeConductor {
     this.deepseek = new DeepSeekAgent();
     this.jev = new JevAgent();
     this.memory = new MemoryManager();
+    this.selfCorrection = new SelfCorrectionEngine();
   }
 
   /**
@@ -46,6 +49,10 @@ export class CooperativeConductor {
       try {
         const state = await this.client.getGameState();
         consecutiveErrors = 0;
+
+        // Verify and calibrate play score outcome in real-time
+        const currentBoss = state.blinds?.boss?.status === 'CURRENT' ? state.blinds.boss : undefined;
+        this.selfCorrection.checkAndCalibrate(state, currentBoss);
 
         if (state.state !== this.lastCapturedState) {
           this.lastCapturedState = state.state;
@@ -149,6 +156,7 @@ export class CooperativeConductor {
     this.cashOutAttempts = 0;
     this.mouthLockedHandType = null;
     this.eyePlayedHandTypes.clear();
+    this.selfCorrection.resetRun();
     console.log(pc.magenta('🎮 [Menu] 检测到主菜单，正在自动发起全新标准对局 (红牌组 + 白注难度)...'));
     await this.client.startRun('RED', 'WHITE');
     console.log(pc.green('✓ [Menu] 对局成功开启，等待进入盲注选择...'));
@@ -664,7 +672,8 @@ export class CooperativeConductor {
       this.currentStrategy?.primaryHandType,
       bossConstraint,
       state.jokers?.cards || [],
-      state.money || 0
+      state.money || 0,
+      this.selfCorrection
     );
 
     // Let Jev System 1 make the tactical choice
@@ -676,9 +685,41 @@ export class CooperativeConductor {
       console.log(pc.bold(pc.green(`⚔️ [Jev 出牌] 打出: [ ${names} ]`)));
       console.log(pc.dim(`   理由: ${decision.reason} (置信度: ${(decision.confidence * 100).toFixed(0)}%)`));
 
+      // Self-Correction Engine: Evaluate theoretical score and record pending play
+      const playedEval = PokerEvaluator.evaluateCombination(
+        cards,
+        playedCards,
+        state.hands,
+        state.jokers?.cards || [],
+        {
+          remainingDiscards: state.round?.discards_left || 0,
+          remainingHands: state.round?.hands_left || 1,
+          money: state.money || 0,
+        }
+      );
+
+      // In-hand steel cards bonus
+      const heldIndices = cards.map((_, i) => i).filter(i => !playedCards.includes(i));
+      let steelCount = 0;
+      for (const h of heldIndices) {
+        if (getCardModifiers(cards[h]).isSteel) steelCount++;
+      }
+      const rawTheoreticalScore = Math.round(playedEval.totalScore * Math.pow(1.5, steelCount));
+      const calibratedScore = this.selfCorrection.applyCalibration(rawTheoreticalScore, playedEval.handType);
+
+      this.selfCorrection.recordPendingPlay(
+        playedEval.handType,
+        names,
+        playedCards,
+        rawTheoreticalScore,
+        calibratedScore,
+        playedEval.chips,
+        playedEval.mult,
+        state
+      );
+
       // Track Boss hand limitations
       if (isBossActive && bossName) {
-        const playedEval = PokerEvaluator.evaluateCombination(cards, playedCards, state.hands);
         if (bossName === 'The Mouth') {
           if (!this.mouthLockedHandType) {
             this.mouthLockedHandType = playedEval.handType;
@@ -829,8 +870,11 @@ export class CooperativeConductor {
     const jokers = state.jokers?.cards?.map(j => j.label || j.key || 'Unknown') || [];
     const bossName = state.blinds?.boss?.name;
 
+    const calibrationSummary = this.selfCorrection.getRunCalibrationSummary();
+    console.log(pc.bold(pc.cyan(`📊 [自纠实测总结] ${calibrationSummary}`)));
+
     console.log(pc.bold(pc.magenta('🤔 [复盘反思中枢] DeepSeek 正在启动战后深度复盘与教训总结...')));
-    const reflection = await this.deepseek.reflectOnRun(state, this.currentStrategy, targetScore, finalScore);
+    const reflection = await this.deepseek.reflectOnRun(state, this.currentStrategy, targetScore, finalScore, calibrationSummary);
 
     console.log(pc.bold(pc.red(`🔍 [死因诊断] ${reflection.rootCause}`)));
     console.log(pc.bold(pc.yellow(`💡 [沉淀血泪教训] ${reflection.lesson}`)));
@@ -848,6 +892,8 @@ export class CooperativeConductor {
       jokers,
       bossName
     );
+
+    this.selfCorrection.resetRun();
 
     const stats = this.memory.getStats();
     console.log(pc.dim(`📈 [经验记忆中枢] 累计对局: ${stats.totalRuns} 轮 | 历史最佳纪录: 底注 ${stats.bestAnte} (最高分: ${stats.bestScore})\n`));

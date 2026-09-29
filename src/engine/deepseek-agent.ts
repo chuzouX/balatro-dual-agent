@@ -175,7 +175,8 @@ ${BALATRO_RULEBOOK}
     state: GameState,
     lastStrategy: StrategicDirective | null,
     targetScore: number,
-    finalScore: number
+    finalScore: number,
+    calibrationSummary?: string
   ): Promise<RunReflection> {
     const jokers = state.jokers?.cards?.map(j => j.label || j.key) || [];
     const boss = state.blinds?.boss;
@@ -211,8 +212,9 @@ ${BALATRO_RULEBOOK}
 - 阵亡时拥有小丑 (${jokers.length}/5)：${jokers.join(', ') || '无'}
 - BOSS 盲注信息：${boss?.name || '普通盲注'} (效果: ${boss?.effect || '无'})
 - 上一轮战略指导：${lastStrategy?.advice || '无'}
+- 实测自纠与误差复盘：${calibrationSummary || '无'}
 
-请作为小丑牌顶级复盘大师，一针见血地诊断死因并提炼 1 条极具指导意义的教训：
+请作为小丑牌顶级复盘大师，结合实测得分与自纠数据一针见血地诊断死因并提炼 1 条极具指导意义的教训：
 请以严格的 JSON 格式输出：
 {
   "rootCause": "一句话分析阵亡的核心病根（如经济断流/构筑缺乏xMult/违背BOSS机制等）",

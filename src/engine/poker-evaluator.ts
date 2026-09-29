@@ -1,5 +1,6 @@
 import { Card, HandCandidate, PokerHandInfo } from '../types.js';
 import { BASE_HAND_STATS } from './rules.js';
+import { SelfCorrectionEngine } from './self-correction-engine.js';
 
 export const RANK_VALUES: Record<string, number> = {
   '2': 2,
@@ -541,7 +542,8 @@ export class PokerEvaluator {
       eyePlayedHandTypes?: Set<string>;
     },
     jokers?: Card[],
-    money?: number
+    money?: number,
+    selfCorrection?: SelfCorrectionEngine
   ): HandCandidate[] {
     const n = cards.length;
     const candidates: HandCandidate[] = [];
@@ -649,12 +651,19 @@ export class PokerEvaluator {
       }
 
       const steelMultiplier = Math.pow(1.5, steelCount);
-      const adjustedScore = Math.round(p.totalScore * steelMultiplier);
+      const theoreticalScore = Math.round(p.totalScore * steelMultiplier);
+
+      const calibrationFactor = selfCorrection ? selfCorrection.getCalibrationFactor(p.handType) : 1.0;
+      const adjustedScore = Math.round(theoreticalScore * calibrationFactor);
       const canOneShot = adjustedScore >= scoreNeeded;
 
       let reasonText = canOneShot
         ? `【一击必胜】打出 ${p.handType} 预估 ${adjustedScore} 分 (直接通关！保留 ${remainingHands} 次出牌换取 $${remainingHands} 奖金)`
         : `打出 ${p.handType} 预估 ${adjustedScore} 分 (${p.chips}×${p.mult})`;
+
+      if (calibrationFactor !== 1.0) {
+        reasonText += ` 🎯[自纠校准: ×${calibrationFactor.toFixed(2)}]`;
+      }
 
       if (steelCount > 0) {
         reasonText += ` 🛡️[手持${steelCount}张钢铁卡x${steelMultiplier.toFixed(1)}]`;

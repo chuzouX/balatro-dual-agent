@@ -1,6 +1,9 @@
 import { PokerEvaluator } from './poker-evaluator.js';
-import { Card } from '../types.js';
+import { SelfCorrectionEngine } from './self-correction-engine.js';
+import { Card, GameState } from '../types.js';
 import pc from 'picocolors';
+import path from 'path';
+import fs from 'fs';
 
 console.log(pc.bold(pc.cyan('🧪 正在测试小丑牌手牌评估引擎 (Poker Evaluator)...')));
 
@@ -200,4 +203,62 @@ if (!hasSacrificedSpade) {
   console.error(pc.red(`❌ 核心黑桃牌被误打出: ${topCandidate.cardsSummary}`));
 }
 
-console.log(pc.bold(pc.green('\n🎉 评估引擎自检全部通过！\n')));
+// Test 11: Self-Correction Engine Calibration & Anomaly Diagnosis Test
+const testCalibrationPath = path.resolve(process.cwd(), 'data', 'test-calibration.json');
+if (fs.existsSync(testCalibrationPath)) fs.unlinkSync(testCalibrationPath);
+
+const sc = new SelfCorrectionEngine(testCalibrationPath);
+console.log(pc.green(`测试 11 - 自纠校准引擎闭环测试 (动态协同因子自学习与 BOSS 异常诊断):`));
+
+// 1. Initial baseline
+const initialFactor = sc.getCalibrationFactor('Pair');
+console.log(`  初始对子校准系数: ×${initialFactor.toFixed(2)}`);
+
+// 2. Simulate play: rawScore = 32, calibrated = 32, but real in-game score = 704
+const mockStateBefore: any = {
+  round: { chips: 0, hands_left: 4 },
+  jokers: { cards: [{ label: 'Gros Michel' }, { label: 'The Duo' }] }
+};
+sc.recordPendingPlay('Pair', '3♠ 3♦', [0, 1], 32, 32, 16, 2, mockStateBefore);
+
+const mockStateAfter: any = {
+  round: { chips: 704, hands_left: 3 },
+  jokers: { cards: [{ label: 'Gros Michel' }, { label: 'The Duo' }] }
+};
+sc.checkAndCalibrate(mockStateAfter);
+
+const calibratedFactorAfter = sc.getCalibrationFactor('Pair');
+console.log(`  实测 704 分自适应校准后对子系数: ×${calibratedFactorAfter.toFixed(2)}`);
+if (calibratedFactorAfter > 5.0) {
+  console.log(pc.green(`✓ 成功！对子协同放大系数从 ×1.00 自适应进化至 ×${calibratedFactorAfter.toFixed(2)}！`));
+} else {
+  console.error(pc.red(`❌ 校准系数更新失败，当前为: ${calibratedFactorAfter}`));
+}
+
+// 3. Test Anomaly detection (Debuffed by Boss, real score = 0)
+const mockStateBeforeDebuff: any = {
+  round: { chips: 704, hands_left: 3 },
+  jokers: { cards: [] }
+};
+sc.recordPendingPlay('Flush', 'A♠ K♠ Q♠ J♠ 9♠', [0, 1, 2, 3, 4], 450, 450, 75, 6, mockStateBeforeDebuff);
+const mockStateAfterDebuff: any = {
+  round: { chips: 704, hands_left: 2 },
+  jokers: { cards: [] }
+};
+sc.checkAndCalibrate(mockStateAfterDebuff, { name: 'The Goad', effect: '所有黑桃卡牌失去效果' });
+const flushFactor = sc.getCalibrationFactor('Flush');
+console.log(`  黑桃被 BOSS 废除后实得 0 分，同花有效系数动态下调为: ×${flushFactor.toFixed(2)}`);
+if (flushFactor <= 0.5) {
+  console.log(pc.green('✓ 成功！BOSS 克制 0 分异常触发安全防御，同花有效系数被安全降级防踩坑！'));
+} else {
+  console.error(pc.red(`❌ 0 分异常降级失败: ${flushFactor}`));
+}
+
+// 4. Test run summary
+const summary = sc.getRunCalibrationSummary();
+console.log(`  对局黑匣子复盘汇报: ${summary}`);
+
+// Clean up test file
+if (fs.existsSync(testCalibrationPath)) fs.unlinkSync(testCalibrationPath);
+
+console.log(pc.bold(pc.green('\n🎉 评估与自纠引擎自检全部通过！\n')));

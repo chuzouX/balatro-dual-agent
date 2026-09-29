@@ -1,25 +1,26 @@
 {
-  "totalRuns": 13,
+  "totalRuns": 15,
   "bestAnte": 4,
   "bestRound": 12,
   "bestScore": 6656,
   "topLessons": [
+    "底注3前必拿至少一张×Mult小丑，缺它不硬闯BOSS。",
+    "缺筹码源与独立×Mult时，严禁进底注3",
     "【行动硬指令】进 BOSS 前必花钱补 +Chips/×Mult，禁止 >$25 硬闯！",
     "【行动硬指令】无稳定×Mult不碰锁牌型BOSS，别裸冲顺子。",
     "前期先买筹码和+Mult，BOSS前保留未污染牌",
-    "【行动硬指令】前2回合必补筹码与×Mult双引擎，杜绝单小丑硬冲BOSS盲注",
-    "3底注前必配至少1张×Mult放最右，无用小丑立即卖掉。",
-    "【行动硬指令】有钱先补核心xMult，禁止空栏存钱进BOSS。"
+    "【行动硬指令】前2回合必补筹码与×Mult双引擎，杜绝单小丑硬冲BOSS盲注"
   ],
   "bossKnowledge": {
-    "The Window": "The Window 禁方片：战前卖 Greedy，用 $40 刷新买 +Chips（Blue/Bull/Stone）和 ×Mult（Duo/Cavendish/Card Sharp/Constellation）。实战避方片，打红桃/黑桃/梅花同花或葫芦；Splash 全牌计分，Photograph 对首个非方片人头牌 ×2；牌型不齐则打三条/两对，绝不打方片同花。",
+    "The Window": "The Window削弱所有方片，导致Greedy Joker的半边输出被打空。破局三选一：①开局前改打红桃/黑桃同花或顺子，让Lusty Joker与Splash走非方片路线；②立刻卖掉Greedy Joker换取+筹码小丑（如Bull/Blue Joker）或独立×Mult（Cavendish/Constellation）；③把$40在商店换成玻璃牌/钢铁牌或木星/土星星球牌，靠牌面自身的×2与等级硬斩4000。核心是绝不能带着'单一花色依赖+纯加法'阵容硬碰削弱该花色的BOSS。",
     "The Psychic": "强制必须打满 5 张牌才计分：若手牌只有对子或三条，必须垫入低点数废牌凑齐 5 张打出！",
     "The Pillar": "The Pillar 机制仅在 BOSS 关卡生效，小盲和大盲绝对不受影响！在小盲/大盲照常全力打大牌（同花/葫芦/顺子）确保过关拿钱进店买小丑；进 BOSS 战后换用未打过的花色（例如之前打黑桃同花，BOSS 改打方片同花或葫芦）即可轻松破局，切禁在普通盲注故意放水自毁！",
     "The Hook": "Hook每手随机弃2张，禁止跨手蓄牌；弃牌只用于开局找两对/三条，之后每手直接打最佳5张计分牌，优先三条/葫芦，别追同花顺子；有+Mult或+筹码小丑必买。",
     "The Fish": "The Fish：弃牌阶段先凑好已知顺子/同花，保留1弃牌吃Banner，首手直接爆发斩杀；不能斩杀也别连续出小牌，避免抽到背牌污染手牌。",
     "The Eye": "The Eye禁止重复牌型：提前规划高牌→对子→两对→三条→顺子/同花等不重复序列；弃牌只找下一不同牌型；小丑换成通用×Mult，别靠对子/红心条件。",
     "The Mark": "The Mark会隐藏所有人头牌，背面J/Q/K无法确认花色，别赌Ancient；弃掉背面人头，只打可见Ancient花色的牌凑同花/两对/三条。可见花色不足时，改打可见非人头高点数对子/三条，靠Blue Joker撑筹码、Supernova吃出牌次数，商店优先买同花星球与xMult，不再死存$25。",
-    "The Mouth": "The Mouth只锁牌型不锁弃牌：进BOSS前选牌组最易重复的牌型（对子/三条/同花），用弃牌过滤杂牌；若坚持顺子，必须留万能牌/百搭并避免消耗手牌K，Baron要围绕K留手，否则单x1.5推不过1600。"
+    "The Mouth": "The Mouth只锁牌型不锁弃牌：进BOSS前选牌组最易重复的牌型（对子/三条/同花），用弃牌过滤杂牌；若坚持顺子，必须留万能牌/百搭并避免消耗手牌K，Baron要围绕K留手，否则单x1.5推不过1600。",
+    "The Arm": "The Arm战中首手即出最高分牌型，靠×Mult小丑配合红蜡封/钢铁/玻璃爆发，避免多手被连续削级；进BOSS前存钱买×Mult，不要依赖已升级同花等级。"
   },
   "history": [
     {
@@ -236,6 +237,42 @@
       "bossName": "The Window",
       "rootCause": "构筑缺 +Chips 与稳定 ×Mult，唯一 ×2 的 Photograph 独木难支；BOSS 禁方片使 Greedy 失效，却握 $40 不在战前补强，输出差 1640。",
       "lesson": "【行动硬指令】进 BOSS 前必花钱补 +Chips/×Mult，禁止 >$25 硬闯！"
+    },
+    {
+      "runId": 14,
+      "timestamp": "2026-09-29T05:47:19.895Z",
+      "reachedAnte": 3,
+      "reachedRound": 9,
+      "finalMoney": 40,
+      "finalScore": 2360,
+      "targetScore": 4000,
+      "jokers": [
+        "Burglar",
+        "Greedy Joker",
+        "Splash",
+        "Lusty Joker",
+        "Photograph"
+      ],
+      "bossName": "The Window",
+      "rootCause": "构筑严重失衡：5张全是+Mult加法小丑（Greedy/Lusty/Photograph），完全无筹码来源与独立×Mult，唯一乘倍Photograph还是条件触发；且主力Greedy Joker依赖方片，恰被The Window全削弱，2360分已是极限，而$40现金囤着不转化成引擎。",
+      "lesson": "缺筹码源与独立×Mult时，严禁进底注3"
+    },
+    {
+      "runId": 15,
+      "timestamp": "2026-09-29T05:53:36.792Z",
+      "reachedAnte": 3,
+      "reachedRound": 8,
+      "finalMoney": 4,
+      "finalScore": 2952,
+      "targetScore": 4000,
+      "jokers": [
+        "Hallucination",
+        "Crafty Joker",
+        "Green Joker"
+      ],
+      "bossName": "The Arm",
+      "rootCause": "经济断流导致无×Mult，只有筹码与加法倍率，The Arm削牌型后分数上限不足4000。",
+      "lesson": "底注3前必拿至少一张×Mult小丑，缺它不硬闯BOSS。"
     }
   ]
 }
