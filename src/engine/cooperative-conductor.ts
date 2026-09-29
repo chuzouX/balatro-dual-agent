@@ -775,6 +775,9 @@ export class CooperativeConductor {
   }
 
   private async handleShop(state: GameState): Promise<void> {
+    // Allow Balatro shop entrance animations (200ms delay timer in game.lua) to settle cleanly
+    await new Promise(r => setTimeout(r, 250));
+
     // Check if any Planet or money Tarot cards can be used right away in shop
     const usedConsumable = await this.checkAndUseConsumables(state, 'SHOP');
     if (usedConsumable) {
@@ -817,6 +820,7 @@ export class CooperativeConductor {
         await new Promise(r => setTimeout(r, 350));
       } catch (err: any) {
         console.warn(pc.yellow(`⚠️ [Jev 换牌] 换牌执行异常: ${err.message}，停止换牌并离店`));
+        await new Promise(r => setTimeout(r, 200));
         await this.client.nextRound();
       }
       await new Promise(r => setTimeout(r, 350));
@@ -826,6 +830,7 @@ export class CooperativeConductor {
         await this.client.buy(decision.params);
       } catch (err: any) {
         console.warn(pc.yellow(`⚠️ [Jev 选购] 购买失败: ${err.message}，停止购买并离店`));
+        await new Promise(r => setTimeout(r, 200));
         await this.client.nextRound();
       }
       await new Promise(r => setTimeout(r, 350));
@@ -835,13 +840,15 @@ export class CooperativeConductor {
         await this.client.reroll();
       } catch (err: any) {
         console.warn(pc.yellow(`⚠️ [Jev 刷新] 刷新失败: ${err.message}，停止刷新并离店`));
+        await new Promise(r => setTimeout(r, 200));
         await this.client.nextRound();
       }
       await new Promise(r => setTimeout(r, 350));
     } else {
       console.log(pc.bold(pc.blue(`🚪 [Jev 离店] ${decision.reason}`)));
+      await new Promise(r => setTimeout(r, 200));
       await this.client.nextRound();
-      await new Promise(r => setTimeout(r, 350));
+      await new Promise(r => setTimeout(r, 450));
     }
   }
 
@@ -854,7 +861,8 @@ export class CooperativeConductor {
     } catch {
       await this.client.skipPack();
     }
-    await new Promise(r => setTimeout(r, 350));
+    // Allow Balatro ~600ms to complete pack close animation and re-initialize shop UI
+    await new Promise(r => setTimeout(r, 600));
   }
 
   private async handleGameOver(state: GameState): Promise<void> {
