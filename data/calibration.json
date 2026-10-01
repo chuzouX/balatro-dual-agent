@@ -1,197 +1,17 @@
 {
-  "totalCalibrations": 255,
+  "totalCalibrations": 267,
   "globalSynergyFactor": 1,
   "handTypeFactors": {
     "Flush": 1,
-    "Full House": 1.08,
+    "Full House": 1.01,
     "Straight": 1,
     "Three of a Kind": 1,
     "Two Pair": 1,
-    "Pair": 1.01,
+    "Pair": 1,
     "High Card": 1,
     "Straight Flush": 1
   },
   "recentRecords": [
-    {
-      "handType": "Pair",
-      "estimatedScore": 760,
-      "actualScore": 760,
-      "ratio": 1,
-      "delta": 0,
-      "jokers": [
-        "Mr. Bones",
-        "Walkie Talkie",
-        "Raised Fist",
-        "Greedy Joker",
-        "Baron"
-      ],
-      "timestamp": "2026-10-01T17:40:19.531Z"
-    },
-    {
-      "handType": "Straight",
-      "estimatedScore": 910,
-      "actualScore": 910,
-      "ratio": 1,
-      "delta": 0,
-      "jokers": [
-        "Mr. Bones",
-        "Walkie Talkie",
-        "Raised Fist",
-        "Greedy Joker",
-        "Baron"
-      ],
-      "timestamp": "2026-10-01T17:40:25.925Z"
-    },
-    {
-      "handType": "High Card",
-      "estimatedScore": 500,
-      "actualScore": 487,
-      "ratio": 0.97,
-      "delta": -13,
-      "jokers": [
-        "Mr. Bones",
-        "Walkie Talkie",
-        "Raised Fist",
-        "Greedy Joker",
-        "Baron"
-      ],
-      "timestamp": "2026-10-01T17:41:02.351Z"
-    },
-    {
-      "handType": "Two Pair",
-      "estimatedScore": 2400,
-      "actualScore": 2400,
-      "ratio": 1,
-      "delta": 0,
-      "jokers": [
-        "Mr. Bones",
-        "Walkie Talkie",
-        "Raised Fist",
-        "Greedy Joker",
-        "Baron"
-      ],
-      "timestamp": "2026-10-01T17:41:15.431Z"
-    },
-    {
-      "handType": "High Card",
-      "estimatedScore": 800,
-      "actualScore": 800,
-      "ratio": 1,
-      "delta": 0,
-      "jokers": [
-        "Mr. Bones",
-        "Walkie Talkie",
-        "Raised Fist",
-        "Greedy Joker",
-        "Baron"
-      ],
-      "timestamp": "2026-10-01T17:41:21.828Z"
-    },
-    {
-      "handType": "Two Pair",
-      "estimatedScore": 918,
-      "actualScore": 918,
-      "ratio": 1,
-      "delta": 0,
-      "jokers": [
-        "Mr. Bones",
-        "Walkie Talkie",
-        "Raised Fist",
-        "Greedy Joker",
-        "Baron"
-      ],
-      "timestamp": "2026-10-01T17:41:53.226Z"
-    },
-    {
-      "handType": "Two Pair",
-      "estimatedScore": 352,
-      "actualScore": 352,
-      "ratio": 1,
-      "delta": 0,
-      "jokers": [
-        "Mr. Bones",
-        "Walkie Talkie",
-        "Raised Fist",
-        "Greedy Joker",
-        "Baron"
-      ],
-      "timestamp": "2026-10-01T17:42:01.896Z"
-    },
-    {
-      "handType": "Two Pair",
-      "estimatedScore": 400,
-      "actualScore": 400,
-      "ratio": 1,
-      "delta": 0,
-      "jokers": [
-        "Mr. Bones",
-        "Walkie Talkie",
-        "Raised Fist",
-        "Greedy Joker",
-        "Baron"
-      ],
-      "timestamp": "2026-10-01T17:42:09.907Z"
-    },
-    {
-      "handType": "High Card",
-      "estimatedScore": 380,
-      "actualScore": 370,
-      "ratio": 0.97,
-      "delta": -10,
-      "jokers": [
-        "Mr. Bones",
-        "Walkie Talkie",
-        "Raised Fist",
-        "Greedy Joker",
-        "Baron"
-      ],
-      "timestamp": "2026-10-01T17:42:16.334Z"
-    },
-    {
-      "handType": "Full House",
-      "estimatedScore": 1474,
-      "actualScore": 2014,
-      "ratio": 1.37,
-      "delta": 540,
-      "jokers": [
-        "Walkie Talkie",
-        "Raised Fist",
-        "Greedy Joker",
-        "Baron",
-        "Mystic Summit"
-      ],
-      "timestamp": "2026-10-01T17:42:55.464Z"
-    },
-    {
-      "handType": "Three of a Kind",
-      "estimatedScore": 618,
-      "actualScore": 594,
-      "ratio": 1,
-      "delta": -24,
-      "jokers": [
-        "Walkie Talkie",
-        "Raised Fist",
-        "Greedy Joker",
-        "Mystic Summit",
-        "Baron"
-      ],
-      "timestamp": "2026-10-01T17:43:03.112Z"
-    },
-    {
-      "handType": "Two Pair",
-      "estimatedScore": 777,
-      "actualScore": 754,
-      "ratio": 1,
-      "delta": -23,
-      "jokers": [
-        "Walkie Talkie",
-        "Raised Fist",
-        "Greedy Joker",
-        "Mystic Summit",
-        "Baron"
-      ],
-      "timestamp": "2026-10-01T17:43:08.985Z"
-    },
     {
       "handType": "Flush",
       "estimatedScore": 315,
@@ -415,6 +235,149 @@
       "delta": 0,
       "jokers": [],
       "timestamp": "2026-10-01T17:49:52.422Z"
+    },
+    {
+      "handType": "Two Pair",
+      "estimatedScore": 108,
+      "actualScore": 108,
+      "ratio": 1,
+      "delta": 0,
+      "jokers": [],
+      "timestamp": "2026-10-01T17:49:58.828Z"
+    },
+    {
+      "handType": "Flush",
+      "estimatedScore": 603,
+      "actualScore": 603,
+      "ratio": 1,
+      "delta": 0,
+      "jokers": [
+        "Smiley Face"
+      ],
+      "timestamp": "2026-10-01T17:50:26.791Z"
+    },
+    {
+      "handType": "Full House",
+      "estimatedScore": 528,
+      "actualScore": 498,
+      "ratio": 1,
+      "delta": -30,
+      "jokers": [
+        "Smiley Face",
+        "Crafty Joker"
+      ],
+      "timestamp": "2026-10-01T17:51:06.298Z"
+    },
+    {
+      "handType": "High Card",
+      "estimatedScore": 90,
+      "actualScore": 90,
+      "ratio": 1,
+      "delta": 0,
+      "jokers": [
+        "Crafty Joker",
+        "Smiley Face"
+      ],
+      "timestamp": "2026-10-01T17:51:12.554Z"
+    },
+    {
+      "handType": "Full House",
+      "estimatedScore": 520,
+      "actualScore": 510,
+      "ratio": 1,
+      "delta": -10,
+      "jokers": [
+        "Crafty Joker",
+        "Smiley Face"
+      ],
+      "timestamp": "2026-10-01T17:51:18.955Z"
+    },
+    {
+      "handType": "Flush",
+      "estimatedScore": 620,
+      "actualScore": 620,
+      "ratio": 1,
+      "delta": 0,
+      "jokers": [
+        "Crafty Joker",
+        "Smiley Face"
+      ],
+      "timestamp": "2026-10-01T17:51:48.058Z"
+    },
+    {
+      "handType": "Two Pair",
+      "estimatedScore": 92,
+      "actualScore": 92,
+      "ratio": 1,
+      "delta": 0,
+      "jokers": [
+        "Crafty Joker",
+        "Smiley Face"
+      ],
+      "timestamp": "2026-10-01T17:51:57.904Z"
+    },
+    {
+      "handType": "Flush",
+      "estimatedScore": 1341,
+      "actualScore": 1341,
+      "ratio": 1,
+      "delta": 0,
+      "jokers": [
+        "Crafty Joker",
+        "Smiley Face"
+      ],
+      "timestamp": "2026-10-01T17:52:04.319Z"
+    },
+    {
+      "handType": "Flush",
+      "estimatedScore": 1395,
+      "actualScore": 1395,
+      "ratio": 1,
+      "delta": 0,
+      "jokers": [
+        "Crafty Joker",
+        "Smiley Face"
+      ],
+      "timestamp": "2026-10-01T17:52:35.503Z"
+    },
+    {
+      "handType": "Flush",
+      "estimatedScore": 2128,
+      "actualScore": 1278,
+      "ratio": 0.6,
+      "delta": -850,
+      "jokers": [
+        "Crafty Joker",
+        "Smiley Face",
+        "Mystic Summit"
+      ],
+      "timestamp": "2026-10-01T17:53:21.040Z"
+    },
+    {
+      "handType": "Two Pair",
+      "estimatedScore": 528,
+      "actualScore": 224,
+      "ratio": 0.42,
+      "delta": -304,
+      "jokers": [
+        "Crafty Joker",
+        "Smiley Face",
+        "Mystic Summit"
+      ],
+      "timestamp": "2026-10-01T17:53:27.015Z"
+    },
+    {
+      "handType": "Pair",
+      "estimatedScore": 364,
+      "actualScore": 360,
+      "ratio": 1,
+      "delta": -4,
+      "jokers": [
+        "Crafty Joker",
+        "Smiley Face",
+        "Mystic Summit"
+      ],
+      "timestamp": "2026-10-01T17:53:33.442Z"
     }
   ],
   "anomalies": []

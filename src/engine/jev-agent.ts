@@ -220,8 +220,30 @@ export class JevAgent {
       }
     }
 
+    // 4. Low tier flat mult or niche conditional jokers (safe to replace with game-changing xMult)
+    for (let i = 0; i < jokers.length; i++) {
+      const j = jokers[i];
+      const key = (j.key || '').toLowerCase();
+      const label = (j.label || '').toLowerCase();
+      const sellPrice = j.cost?.sell ?? 1;
+
+      if (key.includes('mystic_summit') || label.includes('mystic summit')) {
+        return { index: i, name: j.label || 'Mystic Summit', sellPrice, reason: '需0弃牌触发且仅+15加算倍率，限制极大' };
+      }
+      if (key.includes('walkie_talkie') || label.includes('walkie talkie')) {
+        return { index: i, name: j.label || 'Walkie Talkie', sellPrice, reason: '仅10与4特定点数加成，收益上限受限' };
+      }
+      if (key.includes('chaos') || label.includes('chaos')) {
+        return { index: i, name: j.label || 'Chaos the Clown', sellPrice, reason: '仅免费刷新一次，战斗无直接得分' };
+      }
+      if (key.includes('greedy') || key.includes('lusty') || key.includes('wrathful') || key.includes('gluttenous')) {
+        return { index: i, name: j.label || 'Suit Joker', sellPrice, reason: '单花色固定加算，中后期被乘算碾压' };
+      }
+    }
+
     return null;
   }
+
 
   /**
    * Decide shop actions (buy card/pack, reroll, or next round)
@@ -381,12 +403,11 @@ export class JevAgent {
     }
 
     // Reroll option:
-    // STRICT RULE:
-    // 1. NEVER reroll if joker slots are full (jokersCount >= jokersLimit)!
-    // 2. NEVER reroll if money would drop below the $25 interest threshold (must keep money >= rerollCost + 25)
-    // 3. NEVER reroll if there is already an unbought planet card on shelf
+    // 1. Maintain $25 interest threshold (money >= rerollCost + 25)
+    // 2. Allowed when: slots are open (jokersCount < jokersLimit) OR rich with surplus cash ($35+) and have a disposable joker
     const hasUnboughtPlanet = shopCards.some(c => ((c.set || '').toUpperCase() === 'PLANET' || (c.key && PLANET_HAND_MAP[c.key])) && (c.cost?.buy ?? 4) <= money);
-    const canReroll = (jokersCount < jokersLimit) && (money >= rerollCost + 25) && !hasUnboughtPlanet;
+    const hasDisposableJoker = disposable !== null;
+    const canReroll = (money >= rerollCost + 25) && !hasUnboughtPlanet && (jokersCount < jokersLimit || (money >= 35 && hasDisposableJoker));
     if (canReroll) {
       shopOptions.push({
         id: 'reroll_shop',
@@ -394,6 +415,7 @@ export class JevAgent {
         action: 'reroll',
       });
     }
+
 
     // Next round (always available)
     shopOptions.push({
@@ -465,6 +487,28 @@ export class JevAgent {
       }
     }
 
+    // Surplus Cash Priority: When money is safely above the $25 interest cap (e.g. $29+),
+    // any Celestial Pack, Planet Card, or Voucher is pure value and should be purchased!
+    if (money >= 29) {
+      const surplusInvestment = shopOptions.find(o =>
+        o.action === 'buy' && (
+          o.desc.includes('星球包') ||
+          o.desc.includes('星球牌') ||
+          o.desc.includes('特权优惠券') ||
+          o.desc.includes('幻灵卡包')
+        )
+      );
+      if (surplusInvestment) {
+        return {
+          action: 'buy',
+          params: surplusInvestment.param,
+          reason: `[利息盈余投资] 资金 $${money} 远超 $25 满利息线，果断花销盈余投资强化手牌/牌库: ${surplusInvestment.desc}`,
+          confidence: 1.0,
+          source: 'tactical_fast_path',
+        };
+      }
+    }
+
     const choicesMap: Record<string, string> = {};
     for (const opt of shopOptions) {
       choicesMap[opt.id] = opt.desc;
@@ -473,11 +517,9 @@ export class JevAgent {
     try {
       const prompt = `你正在操盘《小丑牌》(Balatro) 的商店结算阶段。
 【核心法则】：
-1. 生存与利息平衡：前两底注（Ante 1-2）生存第一！小丑不足 2 张时必须优先买即战力小丑（+筹码/+Mult）；当拥有基础战力后，严格严守 $25 利息线（尽量存满吃 $5 满利息），严禁盲刷导致存款跌破利息门槛。
+1. 生存与利息平衡：前两底注（Ante 1-2）生存第一！小丑不足 2 张时必须优先买即战力小丑（+筹码/+Mult）；当拥有基础战力后，严格严守 $25 利息线（尽量存满吃 $5 满利息）。
+2. 利息盈余投资法则：金币超过 $25 的部分（当前持币 $${money}，利息盈余 $${Math.max(0, money - 25)}）绝不能死存！应果断购买星球包升级牌型、购买特权优惠券、或刷新货架用核心乘倍(xMult)换掉弱势小丑！
 
-4. 小丑摆放：从左到右必须为【+筹码/+Mult】->【乘法倍率 xMult 置于最右】。
-5. 战力置换例外：若出现【置换弱势小丑】，是用快报废的衰减小丑换入核心神卡（如 xMult 乘倍小丑或关键牌型小丑），其战力跃升远超短期利息，属于顶级必选决策！
-当前金币: $${money} | 小丑数: ${state.jokers?.count || 0} / ${state.jokers?.limit || 5}
 DeepSeek 战略指导: ${strategy.advice} | 构筑需求: ${strategy.jokerNeeds.join('; ')}
 
 请在可负担的商品中，权衡即战力提升与利息储备，做出最优商品抉择：`;
