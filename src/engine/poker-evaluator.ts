@@ -924,10 +924,20 @@ export class PokerEvaluator {
       }
 
       // Chip Jokers
-      if (k.includes('ice_cream') || k.includes('ice cream')) {
+      if (k.includes('sly')) {
+        if (handContainsPair(handType)) chips += stats.chips ?? 50;
+      } else if (k.includes('wily')) {
+        if (handContainsThreeOfAKind(handType)) chips += stats.chips ?? 100;
+      } else if (k.includes('clever')) {
+        if (handContainsTwoPair(handType)) chips += stats.chips ?? 80;
+      } else if (k.includes('devious')) {
+        if (handContainsStraight(handType)) chips += stats.chips ?? 100;
+      } else if (k.includes('crafty')) {
+        if (handContainsFlush(handType)) chips += stats.chips ?? 80;
+      } else if (k.includes('ice_cream') || k.includes('ice cream')) {
         chips += stats.chips ?? 100;
       } else if (k.includes('blue_joker') || k.includes('blue joker')) {
-        chips += stats.chips ?? (2 * 52);
+        chips += stats.chips ?? (2 * (jokerContext?.deckCardCount ?? 52));
       } else if (k.includes('banner')) {
         chips += (stats.chips ?? 30) * remainingDiscards;
       } else if (k.includes('bull')) {
@@ -942,31 +952,33 @@ export class PokerEvaluator {
         chips += stats.chips ?? 16;
       } else if (k.includes('stone') && !k.includes('stone_card')) {
         chips += stats.chips ?? 25;
-      } else if (k.includes('sly') && handContainsPair(handType)) {
-        chips += stats.chips ?? 50;
-      } else if (k.includes('wily') && handContainsThreeOfAKind(handType)) {
-        chips += stats.chips ?? 100;
-      } else if (k.includes('clever') && handContainsTwoPair(handType)) {
-        chips += stats.chips ?? 80;
-      } else if (k.includes('devious') && handContainsStraight(handType)) {
-        chips += stats.chips ?? 100;
-      } else if (k.includes('crafty') && handContainsFlush(handType)) {
-        chips += stats.chips ?? 80;
-      } else if (stats.chips && stats.chips > 0) {
+      } else if (stats.chips && stats.chips > 0 && !getJokerDefinition(j.key || j.label)?.handType) {
         chips += stats.chips;
       }
 
       // Flat Mult Jokers
-      if ((k === 'j_joker' || k === 'joker') && !k.includes('greedy') && !k.includes('lusty') && !k.includes('blue')) {
+      if (k.includes('droll')) {
+        if (handContainsFlush(handType)) mult += stats.mult ?? 10;
+      } else if (k.includes('crazy')) {
+        if (handContainsStraight(handType)) mult += stats.mult ?? 12;
+      } else if (k.includes('mad') && !k.includes('madness')) {
+        if (handContainsTwoPair(handType)) mult += stats.mult ?? 10;
+      } else if (k.includes('zany')) {
+        if (handContainsThreeOfAKind(handType)) mult += stats.mult ?? 12;
+      } else if (k.includes('jolly')) {
+        if (handContainsPair(handType)) mult += stats.mult ?? 8;
+      } else if (k.includes('trousers')) {
+        if (handContainsTwoPair(handType) || handType === 'Full House') mult += stats.mult ?? 2;
+      } else if (k.includes('half')) {
+        if (allPlayedCards.length <= 3) mult += stats.mult ?? 20;
+      } else if (k.includes('mystic_summit') || k.includes('mystic summit')) {
+        if (remainingDiscards === 0) mult += stats.mult ?? 15;
+      } else if ((k === 'j_joker' || k === 'joker') && !k.includes('greedy') && !k.includes('lusty') && !k.includes('blue')) {
         mult += stats.mult ?? 4;
       } else if (k.includes('gros_michel') || k.includes('gros michel')) {
         mult += stats.mult ?? 15;
       } else if (k.includes('popcorn')) {
         mult += stats.mult ?? 20;
-      } else if (k.includes('half') && allPlayedCards.length <= 3) {
-        mult += stats.mult ?? 20;
-      } else if (k.includes('mystic_summit') || k.includes('mystic summit')) {
-        if (remainingDiscards === 0) mult += stats.mult ?? 15;
       } else if (k.includes('misprint')) {
         mult += stats.mult ?? 11;
       } else if (k.includes('swashbuckler')) {
@@ -990,74 +1002,61 @@ export class PokerEvaluator {
         mult += 2 * Math.floor(money / 5);
       } else if (k.includes('erosion')) {
         mult += stats.mult ?? 4;
-      } else if (k.includes('trousers') && (handContainsTwoPair(handType) || handType === 'Full House')) {
-        mult += stats.mult ?? 2;
-      } else if (k.includes('jolly') && handContainsPair(handType)) {
-        mult += stats.mult ?? 8;
-      } else if (k.includes('zany') && handContainsThreeOfAKind(handType)) {
-        mult += stats.mult ?? 12;
-      } else if ((k === 'j_mad' || k.includes('mad joker') || (k.includes('mad') && !k.includes('madness'))) && handContainsTwoPair(handType)) {
-
-        mult += stats.mult ?? 10;
-      } else if (k.includes('crazy') && handContainsStraight(handType)) {
-        mult += stats.mult ?? 12;
-      } else if (k.includes('droll') && handContainsFlush(handType)) {
-        mult += stats.mult ?? 10;
-      } else if (stats.mult && stats.mult > 0) {
+      } else if (stats.mult && stats.mult > 0 && !getJokerDefinition(j.key || j.label)?.handType && !k.includes('half') && !k.includes('mystic_summit')) {
         mult += stats.mult;
       }
 
       // XMult Jokers
-      if (k.includes('cavendish')) {
-        mult = mult * (stats.xMult ?? 3.0);
-      } else if (k.includes('the_duo') && handContainsPair(handType)) {
-        mult = mult * (stats.xMult ?? 2.0);
-      } else if (k.includes('the_trio') && handContainsThreeOfAKind(handType)) {
-        mult = mult * (stats.xMult ?? 3.0);
-      } else if (k.includes('the_family') && handContainsFourOfAKind(handType)) {
-        mult = mult * (stats.xMult ?? 4.0);
-      } else if (k.includes('the_order') && handContainsStraight(handType)) {
-        mult = mult * (stats.xMult ?? 3.0);
-      } else if (k.includes('the_tribe') && handContainsFlush(handType)) {
-        mult = mult * (stats.xMult ?? 2.0);
+      if (k.includes('the_tribe')) {
+        if (handContainsFlush(handType)) mult *= (stats.xMult ?? 2.0);
+      } else if (k.includes('the_order')) {
+        if (handContainsStraight(handType)) mult *= (stats.xMult ?? 3.0);
+      } else if (k.includes('the_family')) {
+        if (handContainsFourOfAKind(handType)) mult *= (stats.xMult ?? 4.0);
+      } else if (k.includes('the_trio')) {
+        if (handContainsThreeOfAKind(handType)) mult *= (stats.xMult ?? 3.0);
+      } else if (k.includes('the_duo')) {
+        if (handContainsPair(handType)) mult *= (stats.xMult ?? 2.0);
       } else if (k.includes('card_sharp') || k.includes('card sharp')) {
-        if (handsPlayedThisRound > 0) mult = mult * (stats.xMult ?? 3.0);
+        if (handsPlayedThisRound > 0) mult *= (stats.xMult ?? 3.0);
+      } else if (k.includes('acrobat')) {
+        if (remainingHands === 1) mult *= (stats.xMult ?? 3.0);
       } else if (k.includes('blackboard')) {
         const allBlack = heldCards.every(c => {
           const s = c.value?.suit;
           const mod = getCardModifiers(c);
           return s === 'S' || s === 'C' || mod.isStone;
         });
-        if (allBlack) mult = mult * (stats.xMult ?? 3.0);
-      } else if (k.includes('acrobat') && remainingHands === 1) {
-        mult = mult * (stats.xMult ?? 3.0);
+        if (allBlack) mult *= (stats.xMult ?? 3.0);
+      } else if (k.includes('cavendish')) {
+        mult *= (stats.xMult ?? 3.0);
       } else if (k.includes('stencil')) {
-        const emptySlots = Math.max(0, 5 - (jokers?.length || 1));
-        mult = mult * (1 + emptySlots);
+        const emptySlots = Math.max(0, (jokerContext?.jokerLimit ?? 5) - (jokers?.length || 1));
+        mult *= (1 + emptySlots);
       } else if (k.includes('loyalty_card') || k.includes('loyalty')) {
-        mult = mult * (stats.xMult ?? 4.0);
+        mult *= (stats.xMult ?? 4.0);
       } else if (k.includes('seeing_double')) {
         const hasClub = scoringIndices.some(i => cards[i]?.value?.suit === 'C');
         const hasOther = scoringIndices.some(i => cards[i]?.value?.suit && cards[i].value!.suit !== 'C');
-        if (hasClub && hasOther) mult = mult * 2.0;
+        if (hasClub && hasOther) mult *= 2.0;
       } else if (k.includes('flower_pot')) {
         const suits = { S: false, H: false, C: false, D: false };
         for (const i of scoringIndices) {
           const s = cards[i]?.value?.suit;
           if (s && s in suits) (suits as Record<string, boolean>)[s] = true;
         }
-        if (suits.S && suits.H && suits.C && suits.D) mult = mult * 3.0;
+        if (suits.S && suits.H && suits.C && suits.D) mult *= 3.0;
       } else if (k.includes('baseball')) {
         const uncommonCount = (jokers || []).filter(item => getJokerDefinition(item.key || item.label)?.rarity === 2).length;
-        if (uncommonCount > 0) mult = mult * Math.pow(1.5, uncommonCount);
+        if (uncommonCount > 0) mult *= Math.pow(1.5, uncommonCount);
       } else if (k.includes('drivers_license') || k.includes('driver')) {
-        mult = mult * (stats.xMult ?? 3.0);
+        mult *= (stats.xMult ?? 3.0);
       } else if (k.includes('steel_joker')) {
-        mult = mult * (stats.xMult ?? 1.2);
+        mult *= (stats.xMult ?? 1.2);
       } else if (k.includes('constellation') || k.includes('hologram') || k.includes('vampire') || k.includes('madness') || k.includes('campfire') || k.includes('throwback') || k.includes('ramen') || k.includes('obelisk') || k.includes('lucky_cat') || k.includes('glass') || k.includes('hit_the_road') || k.includes('caino') || k.includes('yorick')) {
-        mult = mult * (stats.xMult ?? 1.0);
-      } else if (stats.xMult && stats.xMult > 1.0) {
-        mult = mult * stats.xMult;
+        mult *= (stats.xMult ?? 1.0);
+      } else if (stats.xMult && stats.xMult > 1.0 && !getJokerDefinition(j.key || j.label)?.handType && !k.includes('card_sharp') && !k.includes('acrobat') && !k.includes('blackboard')) {
+        mult *= stats.xMult;
       }
 
       // Joker Physical Edition bonus (always triggers)

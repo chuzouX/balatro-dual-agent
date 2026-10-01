@@ -12,7 +12,14 @@ import path from 'path';
 import fs from 'fs';
 import pc from 'picocolors';
 
+function sleep(ms: number): Promise<void> {
+  const { promise, resolve } = Promise.withResolvers<void>();
+  setTimeout(resolve, ms);
+  return promise;
+}
+
 export class CooperativeConductor {
+
   private client: BalatroClient;
   private deepseek: DeepSeekAgent;
   private jev: JevAgent;
@@ -774,7 +781,7 @@ export class CooperativeConductor {
     this.lastCashOutKey = roundKey;
     this.cashOutAttempts = 1;
     console.log(pc.bold(pc.green(`🎉 [Round Clear] 回合胜利！总得分: ${state.round?.chips || 0}！等待结算动画与奖金统计...`)));
-    await new Promise(r => setTimeout(r, 1200));
+    await sleep(1200);
 
     try {
       await this.client.cashOut();

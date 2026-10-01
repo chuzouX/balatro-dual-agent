@@ -412,6 +412,39 @@ export class JevAgent {
       };
     }
 
+    // Survival Priority 1: In Ante 1 & Ante 2, if 0 jokers, MUST buy first available joker to avoid dying to Ante 1/2 Boss!
+    const ante = state.ante_num || 1;
+    if (jokersCount === 0 && ante <= 2) {
+      const firstJoker = shopOptions.find(o =>
+        o.action === 'buy' && (o.desc.includes('小丑') || o.desc.includes('Joker') || o.desc.includes('补充包'))
+      );
+      if (firstJoker) {
+        return {
+          action: firstJoker.action,
+          params: firstJoker.param,
+          reason: `[生存第一铁律] 前期 0 小丑生存大于利息，果断购入首张小丑牌建立战力: ${firstJoker.desc}`,
+          confidence: 1.0,
+          source: 'tactical_fast_path',
+        };
+      }
+    }
+
+    // Survival Priority 2: In Ante 1 & Ante 2, if jokers < 2, buy any immediate scoring (+Chips/+Mult/Buffoon) joker!
+    if (jokersCount < 2 && ante <= 2) {
+      const scoringJoker = shopOptions.find(o =>
+        o.action === 'buy' && (o.desc.includes('加法倍率') || o.desc.includes('筹码') || o.desc.includes('小丑补充包'))
+      );
+      if (scoringJoker) {
+        return {
+          action: scoringJoker.action,
+          params: scoringJoker.param,
+          reason: `[生存优先法则] 前期小丑不足 2 张，优先补充即战力小丑稳过 Boss: ${scoringJoker.desc}`,
+          confidence: 1.0,
+          source: 'tactical_fast_path',
+        };
+      }
+    }
+
     const choicesMap: Record<string, string> = {};
     for (const opt of shopOptions) {
       choicesMap[opt.id] = opt.desc;
@@ -420,9 +453,8 @@ export class JevAgent {
     try {
       const prompt = `你正在操盘《小丑牌》(Balatro) 的商店结算阶段。
 【核心法则】：
-1. 黄金利息线：每 $5 结余产生 $1 利息（最高 $25 吃满 $5 利息封顶），绝对避免盲目刷新导致存款跌破 $25。
-2. 禁忌法则：小丑栏满(5/5)时严禁刷新商店，此时刷出小丑无法购买纯属浪费！
-3. 消耗品优势：星球牌与塔罗牌购买后自动即时使用，不占用背包栏位，永久提升基础点数。
+1. 生存与利息平衡：前两底注（Ante 1-2）生存第一！小丑不足 2 张时必须优先买即战力小丑（+筹码/+Mult）；当拥有基础战力后，严格严守 $25 利息线（尽量存满吃 $5 满利息），严禁盲刷导致存款跌破利息门槛。
+
 4. 小丑摆放：从左到右必须为【+筹码/+Mult】->【乘法倍率 xMult 置于最右】。
 5. 战力置换例外：若出现【置换弱势小丑】，是用快报废的衰减小丑换入核心神卡（如 xMult 乘倍小丑或关键牌型小丑），其战力跃升远超短期利息，属于顶级必选决策！
 当前金币: $${money} | 小丑数: ${state.jokers?.count || 0} / ${state.jokers?.limit || 5}

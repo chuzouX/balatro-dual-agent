@@ -1,29 +1,32 @@
 {
-  "totalRuns": 20,
+  "totalRuns": 28,
   "bestAnte": 4,
   "bestRound": 12,
   "bestScore": 6656,
   "topLessons": [
-    "【硬指令】前两底注禁打对子/两对，只打同花/葫芦/顺子攒钱。",
-    "【硬指令】无+Mult与×Mult前不刷商店，先补核心小丑",
-    "Flint战只打顺子触发Devious，禁对子高牌，先攒钱补xMult。",
-    "前期先买+Mult小丑，禁连打两对，BOSS避红桃核心",
-    "专注升级同花/三条，底注4前必成强×Mult，禁打对子两对。",
-    "底注3前必拿至少一张×Mult小丑，缺它不硬闯BOSS。"
+    "【行动硬指令】前两底注只打同花/葫芦/顺子，$25前不刷新，见+Mult必拿。",
+    "【行动硬指令】进Boss前必买+Mult或筹码小丑，无小丑不闯Boss。",
+    "遇红桃削弱禁红桃，改非红桃顺子；前两底注禁对子两对。",
+    "【行动硬指令】底注2前禁打对子，只打同花/葫芦/顺子，$25前不刷新。",
+    "【行动硬指令】前两底注禁打对子/两对，只做同花/葫芦一手斩杀。",
+    "【行动硬指令】前两底注禁打对子/高牌，先补筹码与×Mult再转型。"
   ],
   "bossKnowledge": {
     "The Window": "The Window削弱所有方片，导致Greedy Joker的半边输出被打空。破局三选一：①开局前改打红桃/黑桃同花或顺子，让Lusty Joker与Splash走非方片路线；②立刻卖掉Greedy Joker换取+筹码小丑（如Bull/Blue Joker）或独立×Mult（Cavendish/Constellation）；③把$40在商店换成玻璃牌/钢铁牌或木星/土星星球牌，靠牌面自身的×2与等级硬斩4000。核心是绝不能带着'单一花色依赖+纯加法'阵容硬碰削弱该花色的BOSS。",
     "The Psychic": "强制必须打满 5 张牌才计分：若手牌只有对子或三条，必须垫入低点数废牌凑齐 5 张打出！",
     "The Pillar": "进Boss前预留未在本底注出过的同花牌组；Boss中只打这手Flush吃Droll +10 Mult，绝不碰已被The Pillar削弱的牌。",
-    "The Hook": "Hook每手随机弃2张，禁止跨手蓄牌；弃牌只用于开局找两对/三条，之后每手直接打最佳5张计分牌，优先三条/葫芦，别追同花顺子；有+Mult或+筹码小丑必买。",
+    "The Hook": "The Hook每出牌随机弃2张，必须首手就打成牌：开局弃散牌找同花/顺子/葫芦，优先第一手打300+；不要先打对子/两对拖延，避免关键组件被随机弃掉。",
     "The Fish": "The Fish只在出牌后抽牌变背面，进BOSS前必须已有+Mult和×Mult；首手用已见牌打三条/葫芦爆发，之后不要赌顺子/同花，弃牌只找对子/三条，若两手下不到1600直接重开。",
     "The Eye": "The Eye禁止重复牌型：提前规划高牌→对子→两对→三条→顺子/同花等不重复序列；弃牌只找下一不同牌型；小丑换成通用×Mult，别靠对子/红心条件。",
     "The Mark": "The Mark会隐藏所有人头牌，背面J/Q/K无法确认花色，别赌Ancient；弃掉背面人头，只打可见Ancient花色的牌凑同花/两对/三条。可见花色不足时，改打可见非人头高点数对子/三条，靠Blue Joker撑筹码、Supernova吃出牌次数，商店优先买同花星球与xMult，不再死存$25。",
     "The Mouth": "The Mouth只锁牌型不锁弃牌：进BOSS前选牌组最易重复的牌型（对子/三条/同花），用弃牌过滤杂牌；若坚持顺子，必须留万能牌/百搭并避免消耗手牌K，Baron要围绕K留手，否则单x1.5推不过1600。",
     "The Arm": "The Arm战中首手即出最高分牌型，靠×Mult小丑配合红蜡封/钢铁/玻璃爆发，避免多手被连续削级；进BOSS前存钱买×Mult，不要依赖已升级同花等级。",
     "The House": "The House首抽背面时不要赌牌型：进BOSS前保留弃牌次数，第一手直接全弃等正面手牌；之后按Wily→Abstract→Supernova→Constellation打已升级的三条/同花。若输出不足，宁可牺牲部分利息也要在BOSS前买第二张×Mult或双色玻璃牌。",
-    "The Head": "The Head战：红桃牌被削弱且通常不计分，切勿以红桃作为同花/对子核心；优先用黑桃/梅花/方块凑同花或顺子，必要时用万能牌/塔罗改花色，并保留手数进店补+Mult小丑。",
-    "The Flint": "The Flint只减半牌型基础筹码/倍率，小丑加成不受影响。进BOSS前必须卖废牌把Campfire养成x3+并留$10+买xMult；BOSS战弃牌强找顺子，每手靠Devious +100筹码，小丑摆Devious→Campfire，杜绝对子/高牌/两对；若未达标应提前转型或放弃刷分保钱。"
+    "The Head": "弃掉红桃，锁黑桃/梅花/方块；优先凑非红桃顺子触发 Crazy Joker +12 Mult，或非红桃同花/葫芦；商店补 +Chips 与 ×Mult，确保一手 600 斩杀。",
+    "The Flint": "The Flint只减半牌型基础筹码/倍率，小丑加成不受影响。进BOSS前必须卖废牌把Campfire养成x3+并留$10+买xMult；BOSS战弃牌强找顺子，每手靠Devious +100筹码，小丑摆Devious→Campfire，杜绝对子/高牌/两对；若未达标应提前转型或放弃刷分保钱。",
+    "The Water": "进BOSS前必留Luchador；遇The Water开战后立即出售Luchador禁用BOSS词条，恢复弃牌后再凑同花/葫芦；若已无法弃牌，改打已成型高基础牌型，宁少出一手也不打散牌，并用余钱买+Mult或×Mult小丑补引擎。",
+    "The Wheel": "The Wheel使抽牌背面朝上，别硬凑四条/顺子；优先弃牌找同花，保留万能牌，利用Splash全牌计分与Wily筹码，BOSS战前备好四指/捷径等降难度小丑；若手牌不可读，集中出Flush/Full House，拒绝Pair耗尽出牌。",
+    "The Manacle": "The Manacle减手牌上限：提前备Juggler/Troubadour等加手牌小丑抵消，或保留弃牌次数专找同花/顺子，避免打对子；若有万能牌/红蜡封优先保留凑大牌型。"
   },
   "history": [
     {
@@ -354,6 +357,133 @@
       "bossName": "The Pillar",
       "rootCause": "唯一小丑Droll仅条件+10 Mult，既无筹码也无×Mult引擎，经济仅$7断流，还违背前期禁打对子/两对铁律，在The Pillar下重复使用被削弱牌导致输出不足。",
       "lesson": "【硬指令】前两底注禁打对子/两对，只打同花/葫芦/顺子攒钱。"
+    },
+    {
+      "runId": 21,
+      "timestamp": "2026-10-01T17:02:31.577Z",
+      "reachedAnte": 3,
+      "reachedRound": 8,
+      "finalMoney": 10,
+      "finalScore": 702,
+      "targetScore": 4000,
+      "jokers": [
+        "Luchador",
+        "8 Ball",
+        "Drunkard",
+        "Ancient Joker",
+        "Mystic Summit"
+      ],
+      "bossName": "The Water",
+      "rootCause": "构筑缺×Mult且未用Luchador抵消The Water的0弃牌，导致无法弃牌凑同花/葫芦，得分引擎全面崩盘。",
+      "lesson": "【行动硬指令】BOSS战留Luchador售出抵消The Water，无弃牌绝不硬打。"
+    },
+    {
+      "runId": 22,
+      "timestamp": "2026-10-01T17:07:03.824Z",
+      "reachedAnte": 2,
+      "reachedRound": 6,
+      "finalMoney": 2,
+      "finalScore": 673,
+      "targetScore": 1600,
+      "jokers": [
+        "Chaos the Clown",
+        "Crafty Joker",
+        "Supernova",
+        "Droll Joker",
+        "Sock and Buskin"
+      ],
+      "bossName": "The Head",
+      "rootCause": "在无×Mult引擎且资金仅$2时硬闯1600分BOSS，14手中7手对子/1手高牌，同花仅2手，被红桃削弱切断Crafty+Droll主输出。",
+      "lesson": "【行动硬指令】前期禁打对子高牌，优先同花/葫芦并补×Mult"
+    },
+    {
+      "runId": 23,
+      "timestamp": "2026-10-01T17:10:32.289Z",
+      "reachedAnte": 2,
+      "reachedRound": 5,
+      "finalMoney": 8,
+      "finalScore": 976,
+      "targetScore": 1600,
+      "jokers": [
+        "Chaos the Clown",
+        "Crafty Joker",
+        "Supernova"
+      ],
+      "bossName": "The Head",
+      "rootCause": "前期未建立筹码与×Mult引擎，反而大量打低基础对子/高牌，且BOSS The Head红桃削弱下无花色替代，导致实际得分仅为预估的49%，1600分目标前崩盘。",
+      "lesson": "【行动硬指令】前两底注禁打对子/高牌，先补筹码与×Mult再转型。"
+    },
+    {
+      "runId": 24,
+      "timestamp": "2026-10-01T17:11:30.695Z",
+      "reachedAnte": 1,
+      "reachedRound": 1,
+      "finalMoney": 4,
+      "finalScore": 288,
+      "targetScore": 600,
+      "jokers": [],
+      "bossName": "The Hook",
+      "rootCause": "前期无任何小丑且未建立筹码/加法倍率引擎，还违背底注1铁律打Two Pair/Pair低基础牌型，被The Hook弃牌耗死。",
+      "lesson": "【行动硬指令】前两底注禁打对子/两对，只做同花/葫芦一手斩杀。"
+    },
+    {
+      "runId": 25,
+      "timestamp": "2026-10-01T17:16:31.451Z",
+      "reachedAnte": 2,
+      "reachedRound": 6,
+      "finalMoney": 7,
+      "finalScore": 556,
+      "targetScore": 1600,
+      "jokers": [
+        "Splash",
+        "Wily Joker",
+        "Mad Joker",
+        "Hologram"
+      ],
+      "bossName": "The Wheel",
+      "rootCause": "核心病根是未建立×Mult引擎且经济断流，并在 The Wheel 下放弃高基础牌型、狂打9手低分Pair，导致1600 BOSS仅得556。",
+      "lesson": "【行动硬指令】底注2前禁打对子，只打同花/葫芦/顺子，$25前不刷新。"
+    },
+    {
+      "runId": 26,
+      "timestamp": "2026-10-01T17:18:12.244Z",
+      "reachedAnte": 1,
+      "reachedRound": 2,
+      "finalMoney": 4,
+      "finalScore": 448,
+      "targetScore": 600,
+      "jokers": [
+        "Crazy Joker"
+      ],
+      "bossName": "The Head",
+      "rootCause": "在 The Head 红桃削弱下仍大量打对子/两对，Crazy Joker 仅顺子触发成白板，且无 +Chips/×Mult 引擎与经济断流，导致 600 分差 152 崩盘。",
+      "lesson": "遇红桃削弱禁红桃，改非红桃顺子；前两底注禁对子两对。"
+    },
+    {
+      "runId": 27,
+      "timestamp": "2026-10-01T17:19:55.933Z",
+      "reachedAnte": 1,
+      "reachedRound": 2,
+      "finalMoney": 3,
+      "finalScore": 368,
+      "targetScore": 600,
+      "jokers": [],
+      "bossName": "The Manacle",
+      "rootCause": "零小丑进Boss，缺乏+Mult/×Mult与筹码引擎，仅靠基础牌型且The Manacle减手牌导致高牌型难成，经济断流$3无法补强。",
+      "lesson": "【行动硬指令】进Boss前必买+Mult或筹码小丑，无小丑不闯Boss。"
+    },
+    {
+      "runId": 28,
+      "timestamp": "2026-10-01T17:21:18.920Z",
+      "reachedAnte": 1,
+      "reachedRound": 1,
+      "finalMoney": 4,
+      "finalScore": 288,
+      "targetScore": 600,
+      "jokers": [],
+      "bossName": "The Hook",
+      "rootCause": "第1底注BOSS前0小丑无引擎，却违背前期铁律用低基础对子/两对硬打4手仅288，被The Hook随机弃牌进一步断送成型机会。",
+      "lesson": "【行动硬指令】前两底注只打同花/葫芦/顺子，$25前不刷新，见+Mult必拿。"
     }
   ]
 }

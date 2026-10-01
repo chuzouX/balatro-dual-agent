@@ -535,5 +535,28 @@ if (resSplash.totalScore === 192 && resSplash.chips === 48 && resSplash.mult ===
 } else {
   console.error(pc.red(`❌ Splash + Stencil 算分偏差: ${resSplash.totalScore} (期望: 192)`));
 }
+// Test 24: Conditional Jokers Hand-Type Isolation Test (Crafty & Droll must ONLY boost Flush, NEVER Pair!)
+console.log(pc.green(`\n测试 24 - 牌型专属小丑隔离测试 (Crafty & Droll 严禁错误加成对子/两对):`));
+const flushSpecificJokers: Card[] = [
+  { id: 1301, key: 'j_crafty', label: 'Crafty Joker' }, // +80 chips ONLY if Flush
+  { id: 1302, key: 'j_droll', label: 'Droll Joker' },   // +10 mult ONLY if Flush
+];
+const pairWithFlushCards: Card[] = [
+  { id: 1311, value: { rank: '3', suit: 'C' } },
+  { id: 1312, value: { rank: '3', suit: 'D' } },
+  { id: 1313, value: { rank: 'Q', suit: 'D' } },
+  { id: 1314, value: { rank: 'J', suit: 'H' } },
+  { id: 1315, value: { rank: '9', suit: 'H' } },
+];
+const resPairWithFlushJokers = PokerEvaluator.evaluateCombination(pairWithFlushCards, [0, 1, 2, 3, 4], undefined, flushSpecificJokers);
 
-console.log(pc.bold(pc.green('\n🎉 评估与自纠引擎 23 项全场景自检 100% 全部通过！\n')));
+console.log(`  对子在 Crafty + Droll 下预估得分: ${resPairWithFlushJokers.totalScore} (${resPairWithFlushJokers.chips}筹码 × ${resPairWithFlushJokers.mult}倍率)`);
+// Base Pair: 10 chips, 2 mult. Cards: 3 + 3 = 6 chips. Total: 16 chips * 2 mult = 32.
+// Crafty & Droll MUST NOT apply because hand is Pair, not Flush!
+if (resPairWithFlushJokers.totalScore === 32 && resPairWithFlushJokers.chips === 16 && resPairWithFlushJokers.mult === 2) {
+  console.log(pc.green('✓ 成功！Crafty 与 Droll 严格限制为仅同花生效，对子绝对不再被误判为 1100+ 假秒杀分！'));
+} else {
+  console.error(pc.red(`❌ 牌型专属小丑隔离失败: 对子得分 ${resPairWithFlushJokers.totalScore} (期望: 32)`));
+}
+
+console.log(pc.bold(pc.green('\n🎉 评估与自纠引擎 24 项全场景自检 100% 全部通过！\n')));

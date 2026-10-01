@@ -188,13 +188,17 @@ ${BALATRO_RULEBOOK}
     let defaultLesson = '中前期必须尽早配置核心加成小丑，并保留金币吃足利息';
     let defaultBossCounter = boss?.effect ? `针对${boss.name}: 避开不利限制，针对性留牌` : undefined;
 
-    if (money < 5) {
+    if (jokers.length < 2 && ante <= 2) {
+      defaultRootCause = '前两底注未买小丑牌保命，仅凭基础牌型裸奔进 BOSS 猝死';
+      defaultLesson = '【生存第一铁律】前两底注生存大于利息，只要有可负担的小丑必须优先购买，决不可 0 小丑进战！';
+    } else if (money < 5 && ante >= 3) {
       defaultRootCause = '金币过度消耗跌破 $5，丧失了利息滚雪球的能力，导致中后期无钱购入强力小丑';
-      defaultLesson = '【严守利息门槛】前两底注除非有致死危险，否则必须保证手头结余在 $5 的整数倍！';
+      defaultLesson = '【严守利息门槛】战力稳固后必须保证手头结余在 $5 的整数倍吃利息！';
     } else if (jokers.length < 3 && ante >= 2) {
       defaultRootCause = '小丑牌数量严重不足，仅靠手牌基础分无法逾越 800+ 筹码大关';
       defaultLesson = '【填满小丑槽】前两底注在商店中只要有可负担的数值小丑，应果断购买填满 5 个槽位！';
     }
+
 
     if (!this.hasKey || !this.client) {
       return {
@@ -244,9 +248,10 @@ ${BALATRO_RULEBOOK}
           bossCounter: parsed.bossCounter || defaultBossCounter,
         };
       }
-    } catch (e: any) {
-      console.warn(pc.yellow(`[DeepSeek Reflection] 复盘分析降级: ${e.message}`));
+    } catch (e: unknown) {
+      console.warn(pc.yellow(`[DeepSeek Reflection] 复盘分析降级: ${e instanceof Error ? e.message : String(e)}`));
     }
+
 
     return {
       rootCause: defaultRootCause,
