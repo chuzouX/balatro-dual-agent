@@ -661,6 +661,12 @@ export class CooperativeConductor {
         }
       : undefined;
 
+    const consumablesList = state.consumables?.cards || [];
+    const deckContext = {
+      jokerLimit: state.jokers?.limit || 5,
+      deckCardCount: state.deck?.length || 52,
+    };
+
     // Generate ranked tactical candidates (aligned with primaryHandType, Jokers, and held Steel cards)
     const candidates = PokerEvaluator.generateCandidates(
       cards,
@@ -675,8 +681,9 @@ export class CooperativeConductor {
       state.money || 0,
       this.selfCorrection,
       state.deck,
-      state.consumables?.cards || (state as any).consumeables?.cards || [],
-      state.round?.hands_played || 0
+      consumablesList,
+      state.round?.hands_played || 0,
+      deckContext
     );
 
     // Let Jev System 1 make the tactical choice
@@ -701,11 +708,14 @@ export class CooperativeConductor {
           handsPlayedThisRound: state.round?.hands_played || 0,
           bossName: isBossActive ? bossName : undefined,
           deck: state.deck,
-          consumables: state.consumables?.cards || (state as any).consumeables?.cards || [],
+          consumables: consumablesList,
           mouthLockedHandType: this.mouthLockedHandType,
           eyePlayedHandTypes: this.eyePlayedHandTypes,
+          jokerLimit: deckContext.jokerLimit,
+          deckCardCount: deckContext.deckCardCount,
         }
       );
+
 
       const rawTheoreticalScore = playedEval.totalScore;
       const calibratedScore = this.selfCorrection.applyCalibration(rawTheoreticalScore, playedEval.handType);
@@ -763,15 +773,16 @@ export class CooperativeConductor {
 
     this.lastCashOutKey = roundKey;
     this.cashOutAttempts = 1;
-
-    console.log(pc.bold(pc.green(`🎉 [Round Clear] 回合胜利！总得分: ${state.round?.chips || 0}！正在提现奖金...`)));
+    console.log(pc.bold(pc.green(`🎉 [Round Clear] 回合胜利！总得分: ${state.round?.chips || 0}！等待结算动画与奖金统计...`)));
+    await new Promise(r => setTimeout(r, 1200));
 
     try {
       await this.client.cashOut();
       console.log(pc.green(`✓ [Cash Out] 提现指令已执行，等待进入商店阶段...`));
-    } catch (err: any) {
-      console.warn(pc.yellow(`⚠️ [Cash Out] 提现指令提示: ${err.message}`));
+    } catch (err: unknown) {
+      console.warn(pc.yellow(`⚠️ [Cash Out] 提现指令提示: ${err instanceof Error ? err.message : String(err)}`));
     }
+
 
     // Balatro takes ~800-1200ms to tally interest, count chips/money, and switch scene to SHOP
     await new Promise(r => setTimeout(r, 800));

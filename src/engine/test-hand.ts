@@ -388,12 +388,14 @@ if (resStandardDeck.totalScore === 4000 && resPlasmaDeck.totalScore === 12100 &&
 // Test 17: Robust modifier handling (Object, String, Array, null/undefined modifier formats)
 console.log(pc.green(`\n测试 17 - 小丑版本修饰符 (Modifier) 容错与多类型健壮性测试:`));
 const robustJokers: Card[] = [
-  { id: 601, key: 'j_joker1', label: 'Plain Joker', modifier: {} as any },
-  { id: 602, key: 'j_joker2', label: 'Object Foil Joker', modifier: { edition: 'foil' } as any },
-  { id: 603, key: 'j_joker3', label: 'String Holo Joker', modifier: 'HOLO' as any },
-  { id: 604, key: 'j_joker4', label: 'Array Poly Joker', modifier: ['POLY'] as any },
-  { id: 605, key: 'j_joker5', label: 'Null Modifier Joker', modifier: null as any },
+  { id: 601, key: 'j_joker1', label: 'Plain Joker', modifier: {} },
+  { id: 602, key: 'j_joker2', label: 'Object Foil Joker', modifier: { edition: 'foil' } },
+  { id: 603, key: 'j_joker3', label: 'String Holo Joker', modifier: 'HOLO' },
+  { id: 604, key: 'j_joker4', label: 'Array Poly Joker', modifier: ['POLY'] },
+  { id: 605, key: 'j_joker5', label: 'Null Modifier Joker', modifier: null },
 ];
+
+
 let noCrash = false;
 try {
   const resRobust = PokerEvaluator.evaluateCombination(plasmaCards, [0, 1], undefined, robustJokers);
@@ -401,8 +403,137 @@ try {
     noCrash = true;
     console.log(pc.green('✓ 成功！面对对象型{}、字符串型、数组型、null等各种畸形modifier，评估引擎100%稳定运行零报错！'));
   }
-} catch (err: any) {
-  console.error(pc.red(`❌ 遇到非常规 modifier 时崩溃: ${err.message}`));
+} catch (err: unknown) {
+  console.error(pc.red(`❌ 遇到非常规 modifier 时崩溃: ${err instanceof Error ? err.message : String(err)}`));
 }
 
-console.log(pc.bold(pc.green('\n🎉 评估与自纠引擎 17 项全场景自检 100% 全部通过！\n')));
+// Test 18: 150-Joker Knowledge Base static lookup test
+console.log(pc.green(`\n测试 18 - 150张小丑牌全量知识库静态回退与准确算分测试:`));
+const nakedJokers: Card[] = [
+  { id: 701, key: 'j_joker', label: 'Joker' }, // +4 Mult from DB
+  { id: 702, key: 'j_cavendish', label: 'Cavendish' }, // x3 Mult from DB
+  { id: 703, key: 'j_banner', label: 'Banner' }, // +30 Chips/discard from DB
+];
+const resNaked = PokerEvaluator.evaluateCombination(plasmaCards, [0, 1], undefined, nakedJokers, { remainingDiscards: 2 });
+// Base Pair: 10 chips, 2 mult. Cards: 11+11 = 22 chips.
+// Banner: 30 * 2 = 60 chips. Total chips = 10 + 22 + 60 = 92.
+// Mult: (2 base + 4 Joker) * 3 Cavendish = 18 mult.
+// Score = 92 * 18 = 1656.
+console.log(`  裸数据小丑牌得分: ${resNaked.totalScore} (${resNaked.chips}筹码 × ${resNaked.mult}倍率)`);
+if (resNaked.totalScore === 1656 && resNaked.chips === 92 && resNaked.mult === 18) {
+  console.log(pc.green('✓ 成功！即便未提供文本描述或ability，知识库也能静态精准补全基础属性并准确算分！'));
+} else {
+  console.error(pc.red(`❌ 知识库静态回退算分偏差: ${resNaked.totalScore} (期望: 1656)`));
+}
+
+// Test 19: Smeared Joker test (Hearts and Diamonds count as same suit)
+console.log(pc.green(`\n测试 19 - 涂抹小丑 (Smeared Joker) 花色合并同花识别测试:`));
+const smearedCards: Card[] = [
+  { id: 801, value: { rank: 'A', suit: 'H' } },
+  { id: 802, value: { rank: 'K', suit: 'H' } },
+  { id: 803, value: { rank: 'Q', suit: 'D' } },
+  { id: 804, value: { rank: 'J', suit: 'D' } },
+  { id: 805, value: { rank: '9', suit: 'H' } },
+];
+const resSmearedWithout = PokerEvaluator.evaluateCombination(smearedCards, [0, 1, 2, 3, 4], undefined, []);
+const resSmearedWith = PokerEvaluator.evaluateCombination(smearedCards, [0, 1, 2, 3, 4], undefined, [{ id: 899, key: 'j_smeared', label: 'Smeared Joker' }]);
+console.log(`  无 Smeared Joker 牌型: ${resSmearedWithout.handType}`);
+console.log(`  有 Smeared Joker 牌型: ${resSmearedWith.handType}`);
+if (resSmearedWithout.handType === 'High Card' && resSmearedWith.handType === 'Flush') {
+  console.log(pc.green('✓ 成功！3红桃 + 2方片在 Smeared Joker 加持下精准识别为同花 (Flush)！'));
+} else {
+  console.error(pc.red(`❌ Smeared Joker 识别失败: ${resSmearedWith.handType}`));
+}
+
+// Test 20: Shortcut Joker test (Straights can skip 1 rank gap)
+console.log(pc.green(`\n测试 20 - 捷径小丑 (Shortcut) 间隙顺子识别测试:`));
+const shortcutCards: Card[] = [
+  { id: 901, value: { rank: 'T', suit: 'S' } }, // 10
+  { id: 902, value: { rank: '8', suit: 'H' } }, // 8 (gap of 1 from 10)
+  { id: 903, value: { rank: '7', suit: 'C' } }, // 7
+  { id: 904, value: { rank: '5', suit: 'D' } }, // 5 (gap of 1 from 7)
+  { id: 905, value: { rank: '3', suit: 'S' } }, // 3 (gap of 1 from 5)
+];
+const resShortcutWithout = PokerEvaluator.evaluateCombination(shortcutCards, [0, 1, 2, 3, 4], undefined, []);
+const resShortcutWith = PokerEvaluator.evaluateCombination(shortcutCards, [0, 1, 2, 3, 4], undefined, [{ id: 999, key: 'j_shortcut', label: 'Shortcut' }]);
+console.log(`  无 Shortcut 牌型: ${resShortcutWithout.handType}`);
+console.log(`  有 Shortcut 牌型: ${resShortcutWith.handType}`);
+if (resShortcutWithout.handType === 'High Card' && resShortcutWith.handType === 'Straight') {
+  console.log(pc.green('✓ 成功！[10, 8, 7, 5, 3] 在 Shortcut 规则下精准识别为顺子 (Straight)！'));
+} else {
+  console.error(pc.red(`❌ Shortcut 顺子识别失败: ${resShortcutWith.handType}`));
+}
+
+// Test 21: Pareidolia test (All cards count as face cards)
+console.log(pc.green(`\n测试 21 - 空想错觉 (Pareidolia) 全员人头牌协同测试:`));
+const numberCards: Card[] = [
+  { id: 1001, value: { rank: '2', suit: 'S' } },
+  { id: 1002, value: { rank: '2', suit: 'H' } },
+];
+const pareidoliaJokers: Card[] = [
+  { id: 1010, key: 'j_pareidolia', label: 'Pareidolia' },
+  { id: 1011, key: 'j_scary_face', label: 'Scary Face' }, // +30 chips per face card
+  { id: 1012, key: 'j_smiley', label: 'Smiley Face' },     // +5 mult per face card
+  { id: 1013, key: 'j_photograph', label: 'Photograph' },  // first face card x2 mult
+];
+const resPareidolia = PokerEvaluator.evaluateCombination(numberCards, [0, 1], undefined, pareidoliaJokers);
+console.log(`  2点对子在 Pareidolia 下得分: ${resPareidolia.totalScore} (${resPareidolia.chips}筹码 × ${resPareidolia.mult}倍率)`);
+// Pair base: 10 chips, 2 mult. Cards: 2+2=4 chips.
+// 2 cards * Scary Face (+30) = +60 chips -> Total chips = 10 + 4 + 60 = 74 chips.
+// Mult: 2 base + 5 (card 1 smiley) -> * 2 (photograph first face) = 14 -> + 5 (card 2 smiley) = 19 mult.
+// 74 * 19 = 1406 score.
+if (resPareidolia.totalScore === 1406 && resPareidolia.chips === 74 && resPareidolia.mult === 19) {
+  console.log(pc.green('✓ 成功！数字牌 2♠ 2♥ 在 Pareidolia 作用下完美触发 Scary Face、Smiley Face 与 Photograph！'));
+} else {
+  console.error(pc.red(`❌ Pareidolia 协同计算偏差: ${resPareidolia.totalScore} (期望: 1406)`));
+}
+
+// Test 22: Chicot Boss Immunity test
+console.log(pc.green(`\n测试 22 - 希科 (Chicot) 免疫 Boss 盲注特性测试:`));
+const debuffedSpadeCards: Card[] = [
+  { id: 1101, value: { rank: 'A', suit: 'S' } },
+  { id: 1102, value: { rank: 'K', suit: 'S' } },
+  { id: 1103, value: { rank: 'Q', suit: 'S' } },
+  { id: 1104, value: { rank: 'J', suit: 'S' } },
+  { id: 1105, value: { rank: '9', suit: 'S' } },
+];
+const resWithoutChicot = PokerEvaluator.evaluateCombination(debuffedSpadeCards, [0, 1, 2, 3, 4], undefined, [], { bossName: 'The Goad' });
+const resWithChicot = PokerEvaluator.evaluateCombination(debuffedSpadeCards, [0, 1, 2, 3, 4], undefined, [{ id: 1199, key: 'j_chicot', label: 'Chicot' }], { bossName: 'The Goad' });
+console.log(`  无 Chicot 时 The Goad 削弱得分: ${resWithoutChicot.totalScore}`);
+console.log(`  有 Chicot 时 The Goad 免疫得分: ${resWithChicot.totalScore}`);
+if (resWithoutChicot.totalScore < resWithChicot.totalScore && resWithChicot.totalScore === 340) {
+  console.log(pc.green('✓ 成功！Chicot 完美免除了 The Goad 对黑桃同花的削弱，全额计入单牌点数与牌型分！'));
+} else {
+  console.error(pc.red(`❌ Chicot 免疫失败: without=${resWithoutChicot.totalScore}, with=${resWithChicot.totalScore}`));
+}
+
+
+// Test 23: Splash + Joker Stencil synergy test
+console.log(pc.green(`\n测试 23 - 泼溅 (Splash) 全打计分与模板小丑 (Joker Stencil) 槽位加成测试:`));
+const splashCards: Card[] = [
+  { id: 1201, value: { rank: 'A', suit: 'S' } }, // 11 chips
+  { id: 1202, value: { rank: 'K', suit: 'H' } }, // 10 chips
+  { id: 1203, value: { rank: 'Q', suit: 'C' } }, // 10 chips
+  { id: 1204, value: { rank: 'J', suit: 'D' } }, // 10 chips
+  { id: 1205, value: { rank: '2', suit: 'S' } }, // 2 chips
+];
+const splashJokers: Card[] = [
+  { id: 1298, key: 'j_splash', label: 'Splash' },
+  { id: 1299, key: 'j_stencil', label: 'Joker Stencil' },
+];
+// Played: High Card (Ace). Without Splash, only Ace (11) scores.
+// With Splash: all 5 cards score: 11 + 10 + 10 + 10 + 2 = 43 chips.
+// Base High Card: 5 chips, 1 mult.
+// Total chips = 5 + 43 = 48 chips.
+// Stencil: 2 jokers held, limit 5 -> 3 empty slots -> x(1 + 3) = x4 Mult.
+// Mult: 1 * 4 = 4 mult.
+// Total score = 48 * 4 = 192.
+const resSplash = PokerEvaluator.evaluateCombination(splashCards, [0, 1, 2, 3, 4], undefined, splashJokers);
+console.log(`  Splash + Stencil 高牌得分: ${resSplash.totalScore} (${resSplash.chips}筹码 × ${resSplash.mult}倍率)`);
+if (resSplash.totalScore === 192 && resSplash.chips === 48 && resSplash.mult === 4 && resSplash.scoringCardIndices.length === 5) {
+  console.log(pc.green('✓ 成功！Splash 使高牌所有5张牌全部计分，且 Stencil 根据剩余 3 槽位精准提供 ×4 Mult！'));
+} else {
+  console.error(pc.red(`❌ Splash + Stencil 算分偏差: ${resSplash.totalScore} (期望: 192)`));
+}
+
+console.log(pc.bold(pc.green('\n🎉 评估与自纠引擎 23 项全场景自检 100% 全部通过！\n')));

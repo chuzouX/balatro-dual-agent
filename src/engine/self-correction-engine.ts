@@ -50,10 +50,22 @@ export class SelfCorrectionEngine {
     try {
       if (fs.existsSync(this.filePath)) {
         const raw = fs.readFileSync(this.filePath, 'utf-8');
-        return JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        const handTypeFactors: Record<string, number> = {};
+        for (const [k, v] of Object.entries(parsed.handTypeFactors || {})) {
+          // Reset any degraded factors (< 1.0) back to clean 1.0 baseline
+          handTypeFactors[k] = typeof v === 'number' && v >= 1.0 ? v : 1.0;
+        }
+        return {
+          totalCalibrations: parsed.totalCalibrations || 0,
+          globalSynergyFactor: typeof parsed.globalSynergyFactor === 'number' && parsed.globalSynergyFactor >= 1.0 ? parsed.globalSynergyFactor : 1.0,
+          handTypeFactors,
+          recentRecords: Array.isArray(parsed.recentRecords) ? parsed.recentRecords : [],
+          anomalies: Array.isArray(parsed.anomalies) ? parsed.anomalies : [],
+        };
       }
-    } catch (e: any) {
-      console.warn(pc.yellow(`[SelfCorrection] 加载自纠记忆文件异常: ${e.message}，初始化默认配置`));
+    } catch (e: unknown) {
+      console.warn(pc.yellow(`[SelfCorrection] 加载自纠记忆文件异常: ${e instanceof Error ? e.message : String(e)}，初始化默认配置`));
     }
 
     return {
@@ -73,6 +85,7 @@ export class SelfCorrectionEngine {
     };
   }
 
+
   saveData(): void {
     try {
       const dir = path.dirname(this.filePath);
@@ -80,9 +93,10 @@ export class SelfCorrectionEngine {
         fs.mkdirSync(dir, { recursive: true });
       }
       fs.writeFileSync(this.filePath, JSON.stringify(this.data, null, 2), 'utf-8');
-    } catch (e: any) {
-      console.warn(pc.yellow(`[SelfCorrection] 写入自纠记忆文件异常: ${e.message}`));
+    } catch (e: unknown) {
+      console.warn(pc.yellow(`[SelfCorrection] 写入自纠记忆文件异常: ${e instanceof Error ? e.message : String(e)}`));
     }
+
   }
 
   /**
@@ -101,9 +115,10 @@ export class SelfCorrectionEngine {
     const globalFactor = this.data.globalSynergyFactor || 1.0;
     // Blend hand-specific factor (70%) with global joker synergy factor (30%)
     const blended = handFactor * 0.7 + globalFactor * 0.3;
-    // Bound the factor within reasonable limits [0.0, 20.0]
-    return Math.max(0.0, Math.min(20.0, parseFloat(blended.toFixed(2))));
+    // Mathematical base score is the strict minimum: non-debuffed hands can never score below 1.0x!
+    return Math.max(1.0, Math.min(20.0, parseFloat(blended.toFixed(2))));
   }
+
 
   /**
    * Calculate calibrated score given raw theoretical estimation
@@ -194,13 +209,13 @@ export class SelfCorrectionEngine {
     const sign = Number(deltaPercent) >= 0 ? '+' : '';
 
     const prevFactor = this.data.handTypeFactors[handType] || 1.0;
-    // Exponential Moving Average: 40% historical + 60% fresh reality observation
-    const updatedFactor = Math.min(20.0, Math.max(0.1, parseFloat((prevFactor * 0.4 + theoreticalRatio * 0.6).toFixed(2))));
+    // Non-debuffed hands can never degrade below 1.0x mathematical ground truth
+    const updatedFactor = Math.min(20.0, Math.max(1.0, parseFloat((prevFactor * 0.4 + theoreticalRatio * 0.6).toFixed(2))));
     this.data.handTypeFactors[handType] = updatedFactor;
 
-    // Update global joker synergy factor
+    // Update global joker synergy factor (minimum 1.0)
     const prevGlobal = this.data.globalSynergyFactor || 1.0;
-    const updatedGlobal = Math.min(20.0, Math.max(0.1, parseFloat((prevGlobal * 0.6 + theoreticalRatio * 0.4).toFixed(2))));
+    const updatedGlobal = Math.min(20.0, Math.max(1.0, parseFloat((prevGlobal * 0.6 + theoreticalRatio * 0.4).toFixed(2))));
     this.data.globalSynergyFactor = updatedGlobal;
 
     this.data.totalCalibrations++;

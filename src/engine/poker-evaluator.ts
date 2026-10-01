@@ -1,6 +1,7 @@
 import { Card, HandCandidate, PokerHandInfo } from '../types.js';
 import { BASE_HAND_STATS, PLANET_HAND_MAP } from './rules.js';
 import { SelfCorrectionEngine } from './self-correction-engine.js';
+import { getJokerDefinition, BALATRO_JOKERS, JokerDefinition } from './joker-data.js';
 
 export const RANK_VALUES: Record<string, number> = {
   '2': 2,
@@ -134,9 +135,11 @@ export function handContainsFlush(handType: string): boolean {
 export function isCardDebuffed(
   card: Card,
   bossName?: string,
-  anteCardsPlayed?: Set<string>
+  anteCardsPlayed?: Set<string>,
+  hasChicot = false
 ): boolean {
   if (!card) return false;
+  if (hasChicot) return false; // Chicot permanently disables all Boss Blinds
   if ((card as any).debuffed || (card as any).debuff) return true;
   if (!bossName) return false;
 
@@ -169,6 +172,7 @@ export function isCardDebuffed(
       return false;
   }
 }
+
 
 export interface ExtractedJokerStats {
   chips?: number;
@@ -247,10 +251,10 @@ export function extractJokerStats(joker: Card): ExtractedJokerStats {
 
   // 4. Ability.extra could be a number or object
   if (typeof ability.extra === 'number') {
-    if (result.chips === undefined && (joker.key?.includes('ice_cream') || joker.key?.includes('castle'))) {
+    if (result.chips === undefined && (joker.key?.includes('ice_cream') || joker.key?.includes('castle') || joker.key?.includes('runner') || joker.key?.includes('square'))) {
       result.chips = ability.extra;
     }
-    if (result.mult === undefined && (joker.key?.includes('popcorn') || joker.key?.includes('half'))) {
+    if (result.mult === undefined && (joker.key?.includes('popcorn') || joker.key?.includes('half') || joker.key?.includes('swashbuckler'))) {
       result.mult = ability.extra;
     }
     if (result.xMult === undefined && ability.extra > 1.0 && (
@@ -262,14 +266,32 @@ export function extractJokerStats(joker: Card): ExtractedJokerStats {
       result.xMult = ability.extra;
     }
   } else if (typeof ability.extra === 'object' && ability.extra !== null) {
-    if (result.chips === undefined && typeof ability.extra.chips === 'number') {
-      result.chips = ability.extra.chips;
+    const extraObj = ability.extra as Record<string, unknown>;
+    if (result.chips === undefined && typeof extraObj.chips === 'number') {
+      result.chips = extraObj.chips;
     }
-    if (result.mult === undefined && typeof ability.extra.mult === 'number') {
-      result.mult = ability.extra.mult;
+    if (result.mult === undefined && typeof extraObj.mult === 'number') {
+      result.mult = extraObj.mult;
     }
-    if (result.xMult === undefined && typeof ability.extra.x_mult === 'number') {
-      result.xMult = ability.extra.x_mult;
+    if (result.xMult === undefined && typeof extraObj.x_mult === 'number') {
+      result.xMult = extraObj.x_mult;
+    } else if (result.xMult === undefined && typeof extraObj.Xmult === 'number') {
+      result.xMult = extraObj.Xmult;
+    }
+  }
+
+
+  // 5. Fallback to 150-Joker Knowledge Base definition
+  const def = getJokerDefinition(joker.key) || getJokerDefinition(joker.label);
+  if (def) {
+    if (result.chips === undefined && def.baseChips !== undefined) {
+      result.chips = def.baseChips;
+    }
+    if (result.mult === undefined && def.baseMult !== undefined) {
+      result.mult = def.baseMult;
+    }
+    if (result.xMult === undefined && def.baseXMult !== undefined) {
+      result.xMult = def.baseXMult;
     }
   }
 
@@ -327,6 +349,12 @@ export function resolveEffectiveJokers(jokers: Card[]): ResolvedJoker[] {
     }
     if (key.includes('brainstorm')) {
       return findTarget(targetIndex, visited, true);
+    }
+
+    // Check blueprint compatibility from definition
+    const targetDef = getJokerDefinition(target.key || target.label);
+    if (targetDef && targetDef.blueprintCompat === false) {
+      return null;
     }
 
     return target;
@@ -419,6 +447,11 @@ export class PokerEvaluator {
       consumables?: Card[];
       mouthLockedHandType?: string | null;
       eyePlayedHandTypes?: Set<string>;
+      jokerLimit?: number;
+      deckCardCount?: number;
+      enhancedCardCount?: number;
+      steelCardCount?: number;
+      stoneCardCount?: number;
     }
   ): EvaluatedPokerHand {
     const selected = indices.map(idx => cards[idx]);
@@ -427,11 +460,35 @@ export class PokerEvaluator {
     }
 
     const resolvedJokers = resolveEffectiveJokers(jokers || []);
+
     const hasFourFingers = resolvedJokers.some(r => {
       const k = (r.joker.key || r.joker.label || '').toLowerCase();
       return k.includes('four_fingers') || k.includes('four fingers');
     });
+    const hasShortcut = resolvedJokers.some(r => {
+      const k = (r.joker.key || r.joker.label || '').toLowerCase();
+      return k.includes('shortcut');
+    });
+    const hasSmeared = resolvedJokers.some(r => {
+      const k = (r.joker.key || r.joker.label || '').toLowerCase();
+      return k.includes('smeared');
+    });
+    const hasSplash = resolvedJokers.some(r => {
+      const k = (r.joker.key || r.joker.label || '').toLowerCase();
+      return k.includes('splash');
+    });
+    const hasPareidolia = resolvedJokers.some(r => {
+      const k = (r.joker.key || r.joker.label || '').toLowerCase();
+      return k.includes('pareidolia');
+    });
+    const hasChicot = resolvedJokers.some(r => {
+      const k = (r.joker.key || r.joker.label || '').toLowerCase();
+      return k.includes('chicot');
+    });
+
     const flushRequired = hasFourFingers ? 4 : 5;
+    const straightRequired = hasFourFingers ? 4 : 5;
+
 
     const rankCounts: Record<string, number> = {};
     const rankIndices: Record<string, number[]> = {};
@@ -457,67 +514,56 @@ export class PokerEvaluator {
       rankIndices[rank].push(idx);
     }
 
-    // Flush check
+    // Flush check (respecting Smeared Joker: Hearts==Diamonds and Spades==Clubs)
     let isFlush = false;
-    for (const s of ['S', 'H', 'C', 'D']) {
-      if ((suitCounts[s] + wildCount) >= flushRequired) {
+    if (hasSmeared) {
+      const redCount = (suitCounts['H'] || 0) + (suitCounts['D'] || 0) + wildCount;
+      const blackCount = (suitCounts['S'] || 0) + (suitCounts['C'] || 0) + wildCount;
+      if (redCount >= flushRequired || blackCount >= flushRequired) {
         isFlush = true;
-        break;
+      }
+    } else {
+      for (const s of ['S', 'H', 'C', 'D']) {
+        if ((suitCounts[s] + wildCount) >= flushRequired) {
+          isFlush = true;
+          break;
+        }
       }
     }
 
-    // Straight check
+    // Straight check (respecting Four Fingers & Shortcut 1-rank gaps)
     let isStraight = false;
     const nonStoneCards = selected.filter(c => !getCardModifiers(c).isStone);
-    if (nonStoneCards.length >= (hasFourFingers ? 4 : 5)) {
-      const orders = nonStoneCards
-        .map(c => {
-          const rawRank = c.value?.rank || '2';
-          const r = rawRank === 'T' ? '10' : rawRank;
-          return RANK_ORDER[r] || 2;
-        })
-        .sort((a, b) => a - b);
-      const uniqueOrders = Array.from(new Set(orders));
-
-      // 5-card standard straights
-      if (uniqueOrders.length >= 5) {
-        for (let i = 0; i <= uniqueOrders.length - 5; i++) {
-          if (uniqueOrders[i + 4] - uniqueOrders[i] === 4) {
-            isStraight = true;
-            break;
-          }
-        }
-        if (
-          !isStraight &&
-          uniqueOrders.includes(14) &&
-          uniqueOrders.includes(2) &&
-          uniqueOrders.includes(3) &&
-          uniqueOrders.includes(4) &&
-          uniqueOrders.includes(5)
-        ) {
-          isStraight = true;
-        }
+    if (nonStoneCards.length >= straightRequired) {
+      const ranksPresent = new Set<number>();
+      for (const c of nonStoneCards) {
+        const rawRank = c.value?.rank || '2';
+        const r = rawRank === 'T' ? '10' : rawRank;
+        const val = RANK_ORDER[r] || 2;
+        ranksPresent.add(val);
       }
 
-      // 4-card Four Fingers straights
-      if (!isStraight && hasFourFingers && uniqueOrders.length >= 4) {
-        for (let i = 0; i <= uniqueOrders.length - 4; i++) {
-          if (uniqueOrders[i + 3] - uniqueOrders[i] === 3) {
-            isStraight = true;
-            break;
-          }
+      let straightLength = 0;
+      let skippedRank = false;
+      for (let j = 1; j <= 14; j++) {
+        const rankKey = j === 1 ? 14 : j;
+        if (ranksPresent.has(rankKey)) {
+          straightLength++;
+          skippedRank = false;
+        } else if (hasShortcut && !skippedRank && j !== 14) {
+          skippedRank = true;
+        } else {
+          straightLength = 0;
+          skippedRank = false;
         }
-        if (
-          !isStraight &&
-          uniqueOrders.includes(14) &&
-          uniqueOrders.includes(2) &&
-          uniqueOrders.includes(3) &&
-          uniqueOrders.includes(4)
-        ) {
+        if (straightLength >= straightRequired) {
           isStraight = true;
+          break;
         }
       }
     }
+
+
 
     const counts = Object.entries(rankCounts)
       .filter(([r]) => r !== 'STONE')
@@ -572,10 +618,15 @@ export class PokerEvaluator {
       scoringIndices = highestCard ? [highestCard.idx] : [];
     }
 
-    // Always include any Stone cards played in scoringIndices
-    for (const idx of indices) {
-      if (getCardModifiers(cards[idx]).isStone && !scoringIndices.includes(idx)) {
-        scoringIndices.push(idx);
+    // Splash Joker: every played card scores!
+    if (hasSplash) {
+      scoringIndices = [...indices];
+    } else {
+      // Always include any Stone cards played in scoringIndices
+      for (const idx of indices) {
+        if (getCardModifiers(cards[idx]).isStone && !scoringIndices.includes(idx)) {
+          scoringIndices.push(idx);
+        }
       }
     }
 
@@ -585,8 +636,9 @@ export class PokerEvaluator {
     // ─────────────────────────────────────────────────────────────
     // Phase 1: Base Phase (Hand Levels & The Flint check)
     // ─────────────────────────────────────────────────────────────
-    const bossName = jokerContext?.bossName;
-    const base = handLevels?.[handType] || (BASE_HAND_STATS as any)[handType] || { chips: 10, mult: 1 };
+    // Chicot disables all Boss Blinds permanently
+    const bossName = hasChicot ? undefined : jokerContext?.bossName;
+    const base = (handLevels && handLevels[handType]) || BASE_HAND_STATS[handType] || { chips: 10, mult: 1 };
     let chips = base.chips;
     let mult = base.mult;
 
@@ -627,9 +679,9 @@ export class PokerEvaluator {
       const rawRank = card.value?.rank || '2';
       const rank = rawRank === 'T' ? '10' : rawRank;
       const suit = card.value?.suit || 'S';
-      const isFace = rank === 'J' || rank === 'Q' || rank === 'K';
+      const isFace = hasPareidolia || rank === 'J' || rank === 'Q' || rank === 'K';
       const isAce = rank === 'A';
-      const debuffed = isCardDebuffed(card, bossName);
+      const debuffed = isCardDebuffed(card, bossName, undefined, hasChicot);
 
       let triggers = 1;
       if (mod.hasRedSeal) triggers += 1;
@@ -667,14 +719,22 @@ export class PokerEvaluator {
         for (const r of resolvedJokers) {
           const j = r.joker;
           const k = (j.key || j.label || '').toLowerCase();
+          const stats = extractJokerStats(j);
 
           if (isFace) {
-            if (k.includes('scary_face') || k.includes('scary face')) chips += 30;
-            if (k.includes('smiley_face') || k.includes('smiley face')) mult += 5;
-            if ((k.includes('photograph') || k.includes('photograph')) && !firstFaceCardScored) {
-              mult = mult * 2.0;
+            if (k.includes('scary_face') || k.includes('scary face') || k === 'j_scary_face') {
+              chips += (stats.chips ?? 30);
+            }
+            if (k.includes('smiley') || k.includes('smiley_face')) {
+              mult += (stats.mult ?? 5);
+            }
+            if (k.includes('photograph') && !firstFaceCardScored) {
+              mult = mult * (stats.xMult ?? 2.0);
+              firstFaceCardScored = true;
             }
           }
+
+
 
           if (isAce && (k.includes('scholar') || k.includes('scholar'))) {
             chips += 20;
@@ -700,25 +760,47 @@ export class PokerEvaluator {
           if (k.includes('hiker')) {
             chips += 5;
           }
-          if ((rank === 'K' || rank === 'Q') && (k.includes('triboulet') || k.includes('triboulet'))) {
+          if ((rank === 'K' || rank === 'Q' || (hasPareidolia && isFace)) && (k.includes('triboulet') || k.includes('triboulet'))) {
             mult = mult * 2.0;
           }
+          if (k === 'j_idol' || k.includes('the idol') || (k.includes('idol') && !k.includes('pareidolia'))) {
+            const extraObj = typeof j.ability?.extra === 'object' && j.ability?.extra !== null ? (j.ability.extra as Record<string, unknown>) : undefined;
+            const idolSuit = extraObj?.suit;
+            const idolRank = extraObj?.rank;
+            if ((!idolSuit || suit === idolSuit) && (!idolRank || rank === idolRank)) {
+              mult = mult * 2.0;
+            }
+          }
 
-          // Suit triggers
-          if (suit === 'H' || mod.isWild) {
-            if (k.includes('lusty') || k.includes('lusty')) mult += 4;
-            if (k.includes('bloodstone') || k.includes('bloodstone')) mult = mult * 1.5;
+
+
+          // Suit triggers (respecting Smeared Joker: Hearts==Diamonds, Spades==Clubs, and Wild Cards)
+          const isDiamonds = suit === 'D' || mod.isWild || (hasSmeared && suit === 'H');
+          const isHearts = suit === 'H' || mod.isWild || (hasSmeared && suit === 'D');
+          const isSpades = suit === 'S' || mod.isWild || (hasSmeared && suit === 'C');
+          const isClubs = suit === 'C' || mod.isWild || (hasSmeared && suit === 'S');
+
+          if (isHearts) {
+            if (k.includes('lusty')) mult += (stats.mult ?? 3);
+            if (k.includes('bloodstone')) mult = mult * (stats.xMult ?? 1.5);
           }
-          if (suit === 'S' || mod.isWild) {
-            if (k.includes('wrathful') || k.includes('wrathful')) mult += 4;
-            if (k.includes('arrowhead') || k.includes('arrowhead')) chips += 50;
+          if (isDiamonds) {
+            if (k.includes('greedy') || k.includes('dapper')) mult += (stats.mult ?? 3);
           }
-          if (suit === 'C' || mod.isWild) {
-            if (k.includes('gluttonous') || k.includes('gluttonous')) mult += 4;
-            if (k.includes('onyx') || k.includes('onyx')) mult += 7;
+          if (isSpades) {
+            if (k.includes('wrathful')) mult += (stats.mult ?? 3);
+            if (k.includes('arrowhead')) chips += (stats.chips ?? 50);
           }
-          if (suit === 'D' || mod.isWild) {
-            if (k.includes('dapper') || k.includes('dapper')) mult += 4;
+          if (isClubs) {
+            if (k.includes('gluttonous') || k.includes('gluttenous')) mult += (stats.mult ?? 3);
+            if (k.includes('onyx')) mult += (stats.mult ?? 7);
+          }
+          if (k.includes('ancient')) {
+            const extraObj = typeof j.ability?.extra === 'object' && j.ability?.extra !== null ? (j.ability.extra as Record<string, unknown>) : undefined;
+            const ancientSuit = extraObj?.suit || (typeof j.ability?.extra === 'string' ? j.ability.extra : null);
+            if (!ancientSuit || suit === ancientSuit || (hasSmeared && ((ancientSuit === 'Hearts' && suit === 'Diamonds') || (ancientSuit === 'Diamonds' && suit === 'Hearts') || (ancientSuit === 'Spades' && suit === 'Clubs') || (ancientSuit === 'Clubs' && suit === 'Spades')))) {
+              mult = mult * (stats.xMult ?? 1.5);
+            }
           }
         }
       }
@@ -797,17 +879,44 @@ export class PokerEvaluator {
         k.includes('bloodstone') ||
         k.includes('triboulet') ||
         k.includes('ancient') ||
+        (k === 'j_idol' || k.includes('the idol') || (k.includes('idol') && !k.includes('pareidolia'))) ||
+
+        k.includes('greedy') ||
+        k.includes('lusty') ||
+        k.includes('wrathful') ||
+        k.includes('gluttonous') ||
+        k.includes('gluttenous') ||
+        k.includes('arrowhead') ||
+        k.includes('onyx') ||
+        k.includes('rough_gem') ||
+        k.includes('scary_face') ||
+        k.includes('smiley') ||
+        k.includes('scholar') ||
+        k.includes('walkie_talkie') ||
+        k.includes('fibonacci') ||
+        k.includes('even_steven') ||
+        k.includes('odd_todd') ||
+        k.includes('wee') ||
+        k.includes('hiker') ||
         k.includes('baron') ||
         k.includes('shoot_the_moon') ||
         k.includes('hanging_chad') ||
         k.includes('hack') ||
         k.includes('sock_and_buskin') ||
         k.includes('dusk') ||
+        k.includes('selzer') ||
         k.includes('seltzer') ||
-        k.includes('mime');
+        k.includes('mime') ||
+        k.includes('four_fingers') ||
+        k.includes('shortcut') ||
+        k.includes('smeared') ||
+        k.includes('splash') ||
+        k.includes('pareidolia') ||
+        k.includes('chicot');
 
       if (isCardOrHeldTriggerJoker) {
         const editionStr = (r.originalEdition || '').toLowerCase();
+
         if (editionStr.includes('foil')) chips += 50;
         if (editionStr.includes('holo')) mult += 10;
         if (editionStr.includes('poly')) mult = mult * 1.5;
@@ -818,15 +927,21 @@ export class PokerEvaluator {
       if (k.includes('ice_cream') || k.includes('ice cream')) {
         chips += stats.chips ?? 100;
       } else if (k.includes('blue_joker') || k.includes('blue joker')) {
-        chips += stats.chips ?? 50;
+        chips += stats.chips ?? (2 * 52);
       } else if (k.includes('banner')) {
-        chips += 30 * remainingDiscards;
+        chips += (stats.chips ?? 30) * remainingDiscards;
       } else if (k.includes('bull')) {
         chips += 2 * money;
       } else if (k.includes('stuntman')) {
         chips += stats.chips ?? 250;
       } else if (k.includes('castle')) {
         chips += stats.chips ?? 30;
+      } else if (k.includes('runner')) {
+        chips += stats.chips ?? 15;
+      } else if (k.includes('square')) {
+        chips += stats.chips ?? 16;
+      } else if (k.includes('stone') && !k.includes('stone_card')) {
+        chips += stats.chips ?? 25;
       } else if (k.includes('sly') && handContainsPair(handType)) {
         chips += stats.chips ?? 50;
       } else if (k.includes('wily') && handContainsThreeOfAKind(handType)) {
@@ -842,7 +957,9 @@ export class PokerEvaluator {
       }
 
       // Flat Mult Jokers
-      if (k.includes('gros_michel') || k.includes('gros michel')) {
+      if ((k === 'j_joker' || k === 'joker') && !k.includes('greedy') && !k.includes('lusty') && !k.includes('blue')) {
+        mult += stats.mult ?? 4;
+      } else if (k.includes('gros_michel') || k.includes('gros michel')) {
         mult += stats.mult ?? 15;
       } else if (k.includes('popcorn')) {
         mult += stats.mult ?? 20;
@@ -865,17 +982,22 @@ export class PokerEvaluator {
         mult += stats.mult ?? 8;
       } else if (k.includes('red_card') || k.includes('red card')) {
         mult += stats.mult ?? 9;
-      } else if (k.includes('flash_card') || k.includes('flash card')) {
+      } else if (k.includes('flash_card') || k.includes('flash card') || k === 'j_flash') {
         mult += stats.mult ?? 8;
-      } else if (k.includes('abstract_joker') || k.includes('abstract joker')) {
+      } else if (k.includes('abstract_joker') || k.includes('abstract joker') || k === 'j_abstract') {
         mult += 3 * (jokers?.length || 1);
       } else if (k.includes('bootstraps')) {
         mult += 2 * Math.floor(money / 5);
+      } else if (k.includes('erosion')) {
+        mult += stats.mult ?? 4;
+      } else if (k.includes('trousers') && (handContainsTwoPair(handType) || handType === 'Full House')) {
+        mult += stats.mult ?? 2;
       } else if (k.includes('jolly') && handContainsPair(handType)) {
         mult += stats.mult ?? 8;
       } else if (k.includes('zany') && handContainsThreeOfAKind(handType)) {
         mult += stats.mult ?? 12;
-      } else if (k.includes('mad') && handContainsTwoPair(handType)) {
+      } else if ((k === 'j_mad' || k.includes('mad joker') || (k.includes('mad') && !k.includes('madness'))) && handContainsTwoPair(handType)) {
+
         mult += stats.mult ?? 10;
       } else if (k.includes('crazy') && handContainsStraight(handType)) {
         mult += stats.mult ?? 12;
@@ -909,6 +1031,31 @@ export class PokerEvaluator {
         if (allBlack) mult = mult * (stats.xMult ?? 3.0);
       } else if (k.includes('acrobat') && remainingHands === 1) {
         mult = mult * (stats.xMult ?? 3.0);
+      } else if (k.includes('stencil')) {
+        const emptySlots = Math.max(0, 5 - (jokers?.length || 1));
+        mult = mult * (1 + emptySlots);
+      } else if (k.includes('loyalty_card') || k.includes('loyalty')) {
+        mult = mult * (stats.xMult ?? 4.0);
+      } else if (k.includes('seeing_double')) {
+        const hasClub = scoringIndices.some(i => cards[i]?.value?.suit === 'C');
+        const hasOther = scoringIndices.some(i => cards[i]?.value?.suit && cards[i].value!.suit !== 'C');
+        if (hasClub && hasOther) mult = mult * 2.0;
+      } else if (k.includes('flower_pot')) {
+        const suits = { S: false, H: false, C: false, D: false };
+        for (const i of scoringIndices) {
+          const s = cards[i]?.value?.suit;
+          if (s && s in suits) (suits as Record<string, boolean>)[s] = true;
+        }
+        if (suits.S && suits.H && suits.C && suits.D) mult = mult * 3.0;
+      } else if (k.includes('baseball')) {
+        const uncommonCount = (jokers || []).filter(item => getJokerDefinition(item.key || item.label)?.rarity === 2).length;
+        if (uncommonCount > 0) mult = mult * Math.pow(1.5, uncommonCount);
+      } else if (k.includes('drivers_license') || k.includes('driver')) {
+        mult = mult * (stats.xMult ?? 3.0);
+      } else if (k.includes('steel_joker')) {
+        mult = mult * (stats.xMult ?? 1.2);
+      } else if (k.includes('constellation') || k.includes('hologram') || k.includes('vampire') || k.includes('madness') || k.includes('campfire') || k.includes('throwback') || k.includes('ramen') || k.includes('obelisk') || k.includes('lucky_cat') || k.includes('glass') || k.includes('hit_the_road') || k.includes('caino') || k.includes('yorick')) {
+        mult = mult * (stats.xMult ?? 1.0);
       } else if (stats.xMult && stats.xMult > 1.0) {
         mult = mult * stats.xMult;
       }
@@ -920,6 +1067,7 @@ export class PokerEvaluator {
       if (editionStr.includes('poly')) mult = mult * 1.5;
     }
 
+
     // ─────────────────────────────────────────────────────────────
     // Phase 5: Observatory Phase (Held planet cards x1.5)
     // ─────────────────────────────────────────────────────────────
@@ -928,10 +1076,12 @@ export class PokerEvaluator {
       for (const c of consumables) {
         const planetHand = PLANET_HAND_MAP[c.key || ''] || PLANET_HAND_MAP[c.label || ''];
         if (planetHand === handType) {
-          // In case Observatory voucher is possessed
+          // Observatory voucher grants x1.5 Mult per planet in consumables
+          mult = mult * 1.5;
         }
       }
     }
+
 
     // ─────────────────────────────────────────────────────────────
     // Phase 6: Deck Phase (Plasma Deck balancing & Boss zero checks)
@@ -951,21 +1101,24 @@ export class PokerEvaluator {
     }
 
     // Boss Zero-Score Invalidation
-    if (bossName === 'The Psychic' && allPlayedCards.length < 5) {
-      chips = 0;
-      mult = 0;
-      totalScore = 0;
+    if (!hasChicot) {
+      if (bossName === 'The Psychic' && allPlayedCards.length < 5) {
+        chips = 0;
+        mult = 0;
+        totalScore = 0;
+      }
+      if (bossName === 'The Eye' && jokerContext?.eyePlayedHandTypes && jokerContext.eyePlayedHandTypes.has(handType)) {
+        chips = 0;
+        mult = 0;
+        totalScore = 0;
+      }
+      if (bossName === 'The Mouth' && jokerContext?.mouthLockedHandType && handType !== jokerContext.mouthLockedHandType) {
+        chips = 0;
+        mult = 0;
+        totalScore = 0;
+      }
     }
-    if (bossName === 'The Eye' && jokerContext?.eyePlayedHandTypes && jokerContext.eyePlayedHandTypes.has(handType)) {
-      chips = 0;
-      mult = 0;
-      totalScore = 0;
-    }
-    if (bossName === 'The Mouth' && jokerContext?.mouthLockedHandType && handType !== jokerContext.mouthLockedHandType) {
-      chips = 0;
-      mult = 0;
-      totalScore = 0;
-    }
+
 
     const cardsStr = indices
       .map(i => `${cards[i].value?.rank || '?'}${cards[i].value?.suit || '?'}`)
@@ -1004,8 +1157,16 @@ export class PokerEvaluator {
     selfCorrection?: SelfCorrectionEngine,
     deck?: string,
     consumables?: Card[],
-    handsPlayedThisRound?: number
+    handsPlayedThisRound?: number,
+    deckContext?: {
+      jokerLimit?: number;
+      deckCardCount?: number;
+      enhancedCardCount?: number;
+      steelCardCount?: number;
+      stoneCardCount?: number;
+    }
   ): HandCandidate[] {
+
     const n = cards.length;
     const candidates: HandCandidate[] = [];
     const scoreNeeded = Math.max(0, targetScore - currentScore);
@@ -1058,7 +1219,13 @@ export class PokerEvaluator {
       consumables,
       mouthLockedHandType: bossConstraint?.mouthLockedHandType,
       eyePlayedHandTypes: bossConstraint?.eyePlayedHandTypes,
+      jokerLimit: deckContext?.jokerLimit ?? 5,
+      deckCardCount: deckContext?.deckCardCount ?? 52,
+      enhancedCardCount: deckContext?.enhancedCardCount,
+      steelCardCount: deckContext?.steelCardCount,
+      stoneCardCount: deckContext?.stoneCardCount,
     };
+
 
     // Evaluate all collected play combinations
     let evaluatedPlays: (EvaluatedPokerHand & { indices: number[] })[] = [];
@@ -1174,6 +1341,13 @@ export class PokerEvaluator {
       let priority = adjustedScore;
       if (canOneShot) {
         priority += 100000 + remainingHands * 500;
+        if (hasBlueSealInHand) {
+          priority += 2000;
+        }
+        const hasGoldInHand = heldIndices.some(h => getCardModifiers(cards[h]).isGold);
+        if (hasGoldInHand) {
+          priority += 1500;
+        }
       } else {
         if (adjustedScore >= 150 || adjustedScore >= scoreNeeded * 0.4) {
           priority += 2500;

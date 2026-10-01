@@ -1,4 +1,5 @@
 import { Card } from '../types.js';
+import { getJokerDefinition } from './joker-data.js';
 
 export interface JokerClassification {
   index: number;
@@ -32,7 +33,36 @@ export class JokerSorter {
       edition = mod.toLowerCase();
     }
 
-    // 1. Copy Jokers (Blueprint & Brainstorm)
+    // 0. Primary Check: Lookup exact definition from 150-Joker knowledge base
+    const def = getJokerDefinition(joker.key) || getJokerDefinition(joker.label);
+
+    // Polychrome edition gives X1.5 Mult, elevating any Joker to XMult tier
+    const isPolychrome = edition.includes('poly');
+
+    if (def) {
+      if (def.category === 'BLUEPRINT') {
+        return { index, label: joker.label || def.name, key: joker.key || def.key, category: 'BLUEPRINT', categoryRank: 4 };
+      }
+      if (def.category === 'BRAINSTORM') {
+        return { index, label: joker.label || def.name, key: joker.key || def.key, category: 'BRAINSTORM', categoryRank: 4 };
+      }
+      if (isPolychrome || def.category === 'XMULT') {
+        return { index, label: joker.label || def.name, key: joker.key || def.key, category: 'XMULT', categoryRank: 5 };
+      }
+      if (def.category === 'RETRIGGER') {
+        return { index, label: joker.label || def.name, key: joker.key || def.key, category: 'RETRIGGER', categoryRank: 3 };
+      }
+      if (def.category === 'FLAT_MULT') {
+        return { index, label: joker.label || def.name, key: joker.key || def.key, category: 'FLAT_MULT', categoryRank: 2 };
+      }
+      if (def.category === 'CHIPS') {
+        return { index, label: joker.label || def.name, key: joker.key || def.key, category: 'CHIPS', categoryRank: 1 };
+      }
+      // Economy / Utility / Hand Modifier
+      return { index, label: joker.label || def.name, key: joker.key || def.key, category: 'ECONOMY', categoryRank: 0 };
+    }
+
+    // 1. Copy Jokers (Blueprint & Brainstorm) fallback
     if (key.includes('blueprint') || label.includes('blueprint')) {
       return { index, label: joker.label || key, key, category: 'BLUEPRINT', categoryRank: 4 };
     }
@@ -58,7 +88,6 @@ export class JokerSorter {
       'the_duo', 'the_trio', 'the_family', 'the_order', 'the_tribe', 'steel_joker'
     ];
     const matchesKnownXMult = knownXMultKeys.some(k => key.includes(k) || label.includes(k));
-    const isPolychrome = edition.includes('poly');
 
     if (isExplicitXMult || matchesKnownXMult || isPolychrome) {
       return { index, label: joker.label || key, key, category: 'XMULT', categoryRank: 5 };

@@ -19,6 +19,23 @@ export interface CardValue {
   suit?: string;
   effect?: string;
 }
+export interface CardAbility {
+  name?: string;
+  effect?: string;
+  set?: string;
+  mult?: number;
+  chips?: number;
+  h_mult?: number;
+  h_x_mult?: number;
+  t_mult?: number;
+  t_chips?: number;
+  x_mult?: number;
+  xmult?: number;
+  extra_x_mult?: number;
+  extra?: number | string | Record<string, unknown> | null;
+  type?: string;
+  [key: string]: unknown;
+}
 
 export interface Card {
   id: number | string;
@@ -26,12 +43,12 @@ export interface Card {
   label?: string;
   set?: string;
   value?: CardValue;
-  modifier?: string[];
+  modifier?: string[] | Record<string, unknown> | string | null;
   cost?: {
     buy?: number;
     sell?: number;
   };
-  ability?: any;
+  ability?: CardAbility;
 }
 
 export interface BlindInfo {
