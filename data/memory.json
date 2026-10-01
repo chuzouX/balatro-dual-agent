@@ -1,15 +1,15 @@
 {
-  "totalRuns": 28,
+  "totalRuns": 30,
   "bestAnte": 4,
   "bestRound": 12,
   "bestScore": 6656,
   "topLessons": [
+    "过$25先补筹码或第二×Mult；The Club禁打梅花计分。",
+    "无×Mult禁进BOSS，优先补乘倍钢铁玻璃，弃低牌型。",
     "【行动硬指令】前两底注只打同花/葫芦/顺子，$25前不刷新，见+Mult必拿。",
     "【行动硬指令】进Boss前必买+Mult或筹码小丑，无小丑不闯Boss。",
     "遇红桃削弱禁红桃，改非红桃顺子；前两底注禁对子两对。",
-    "【行动硬指令】底注2前禁打对子，只打同花/葫芦/顺子，$25前不刷新。",
-    "【行动硬指令】前两底注禁打对子/两对，只做同花/葫芦一手斩杀。",
-    "【行动硬指令】前两底注禁打对子/高牌，先补筹码与×Mult再转型。"
+    "【行动硬指令】底注2前禁打对子，只打同花/葫芦/顺子，$25前不刷新。"
   ],
   "bossKnowledge": {
     "The Window": "The Window削弱所有方片，导致Greedy Joker的半边输出被打空。破局三选一：①开局前改打红桃/黑桃同花或顺子，让Lusty Joker与Splash走非方片路线；②立刻卖掉Greedy Joker换取+筹码小丑（如Bull/Blue Joker）或独立×Mult（Cavendish/Constellation）；③把$40在商店换成玻璃牌/钢铁牌或木星/土星星球牌，靠牌面自身的×2与等级硬斩4000。核心是绝不能带着'单一花色依赖+纯加法'阵容硬碰削弱该花色的BOSS。",
@@ -23,10 +23,11 @@
     "The Arm": "The Arm战中首手即出最高分牌型，靠×Mult小丑配合红蜡封/钢铁/玻璃爆发，避免多手被连续削级；进BOSS前存钱买×Mult，不要依赖已升级同花等级。",
     "The House": "The House首抽背面时不要赌牌型：进BOSS前保留弃牌次数，第一手直接全弃等正面手牌；之后按Wily→Abstract→Supernova→Constellation打已升级的三条/同花。若输出不足，宁可牺牲部分利息也要在BOSS前买第二张×Mult或双色玻璃牌。",
     "The Head": "弃掉红桃，锁黑桃/梅花/方块；优先凑非红桃顺子触发 Crazy Joker +12 Mult，或非红桃同花/葫芦；商店补 +Chips 与 ×Mult，确保一手 600 斩杀。",
-    "The Flint": "The Flint只减半牌型基础筹码/倍率，小丑加成不受影响。进BOSS前必须卖废牌把Campfire养成x3+并留$10+买xMult；BOSS战弃牌强找顺子，每手靠Devious +100筹码，小丑摆Devious→Campfire，杜绝对子/高牌/两对；若未达标应提前转型或放弃刷分保钱。",
+    "The Flint": "The Flint下基础筹码/倍率减半，需靠不受减半影响的×Mult与强化：进BOSS前买Cavendish/Constellation/Duo/Trio或玻璃牌；已有Baron则瘦牌留K，配Mime/钢铁K叠×1.5，优先同花/葫芦/顺子并用红蜡封/玻璃爆发，禁打对子高牌。",
     "The Water": "进BOSS前必留Luchador；遇The Water开战后立即出售Luchador禁用BOSS词条，恢复弃牌后再凑同花/葫芦；若已无法弃牌，改打已成型高基础牌型，宁少出一手也不打散牌，并用余钱买+Mult或×Mult小丑补引擎。",
     "The Wheel": "The Wheel使抽牌背面朝上，别硬凑四条/顺子；优先弃牌找同花，保留万能牌，利用Splash全牌计分与Wily筹码，BOSS战前备好四指/捷径等降难度小丑；若手牌不可读，集中出Flush/Full House，拒绝Pair耗尽出牌。",
-    "The Manacle": "The Manacle减手牌上限：提前备Juggler/Troubadour等加手牌小丑抵消，或保留弃牌次数专找同花/顺子，避免打对子；若有万能牌/红蜡封优先保留凑大牌型。"
+    "The Manacle": "The Manacle减手牌上限：提前备Juggler/Troubadour等加手牌小丑抵消，或保留弃牌次数专找同花/顺子，避免打对子；若有万能牌/红蜡封优先保留凑大牌型。",
+    "The Club": "提前用塔罗/万能牌把核心梅花改非梅花；BOSS战弃光梅花，改打方块/红桃/黑桃同花或葫芦，利用Greedy Joker吃方块+Mult。"
   },
   "history": [
     {
@@ -484,6 +485,43 @@
       "bossName": "The Hook",
       "rootCause": "第1底注BOSS前0小丑无引擎，却违背前期铁律用低基础对子/两对硬打4手仅288，被The Hook随机弃牌进一步断送成型机会。",
       "lesson": "【行动硬指令】前两底注只打同花/葫芦/顺子，$25前不刷新，见+Mult必拿。"
+    },
+    {
+      "runId": 29,
+      "timestamp": "2026-10-01T17:43:24.719Z",
+      "reachedAnte": 4,
+      "reachedRound": 10,
+      "finalMoney": 38,
+      "finalScore": 3362,
+      "targetScore": 10000,
+      "jokers": [
+        "Walkie Talkie",
+        "Raised Fist",
+        "Greedy Joker",
+        "Mystic Summit",
+        "Baron"
+      ],
+      "bossName": "The Flint",
+      "rootCause": "构筑无稳定×Mult，$38经济未转战力；The Flint减半基础后仍大量打对子/两对/高牌，条件+Mult小丑无法补足10000目标。",
+      "lesson": "无×Mult禁进BOSS，优先补乘倍钢铁玻璃，弃低牌型。"
+    },
+    {
+      "runId": 30,
+      "timestamp": "2026-10-01T17:49:05.481Z",
+      "reachedAnte": 4,
+      "reachedRound": 10,
+      "finalMoney": 52,
+      "finalScore": 4017,
+      "targetScore": 10000,
+      "jokers": [
+        "Scholar",
+        "Smiley Face",
+        "Greedy Joker",
+        "Constellation"
+      ],
+      "bossName": "The Club",
+      "rootCause": "资金$52未转化，构筑无筹码小丑且仅Constellation单×Mult，The Club下仍让梅花参与计分，输出断档。",
+      "lesson": "过$25先补筹码或第二×Mult；The Club禁打梅花计分。"
     }
   ]
 }

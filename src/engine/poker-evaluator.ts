@@ -1348,13 +1348,19 @@ export class PokerEvaluator {
           priority += 1500;
         }
       } else {
-        if (adjustedScore >= 150 || adjustedScore >= scoreNeeded * 0.4) {
-          priority += 2500;
+        if (adjustedScore >= scoreNeeded * 0.5) {
+          priority += 3500;
+        } else if (adjustedScore >= scoreNeeded * 0.25) {
+          priority += 1200;
         }
         if (primaryHandType && p.handType === primaryHandType) {
-          priority += Math.min(adjustedScore * 0.25, 100);
+          priority += Math.min(adjustedScore * 0.2, 500);
+        }
+        if (remainingDiscards === 0) {
+          priority += 2000;
         }
       }
+
       if (hasBlueSealInHand && canOneShot) {
         priority += 2000;
       }
@@ -1440,12 +1446,12 @@ export class PokerEvaluator {
         });
       }
 
-      // Strategy A: Discard non-flush cards if 4 cards share a suit
+      // Strategy A: Discard non-flush cards if 4 or 3 cards share a suit
       for (const [suit, indices] of Object.entries(suitGroups)) {
-        if (indices.length === 4 || (indices.length === 3 && remainingDiscards >= 2 && pairedRanks.size === 0)) {
+        if (indices.length === 4 || (indices.length === 3 && remainingDiscards >= 2)) {
           const nonFlushIndices = cards
             .map((c, idx) => ({ c, idx }))
-            .filter(x => x.c.value?.suit !== suit && !pairedRanks.has(x.c.value?.rank || '') && !cardMods[x.idx].isSteel && !cardMods[x.idx].hasBlueSeal)
+            .filter(x => x.c.value?.suit !== suit && !cardMods[x.idx].isSteel && !cardMods[x.idx].hasBlueSeal)
             .map(x => x.idx)
             .slice(0, 5);
 
@@ -1455,11 +1461,12 @@ export class PokerEvaluator {
               cardIndices: nonFlushIndices,
               cardsSummary: nonFlushIndices.map(i => `${cards[i].value?.rank || '?'}${SUIT_NAMES[cards[i].value?.suit || 'S'] || ''}`).join(' '),
               reason: `【洗同花】当前已有 ${indices.length} 张 ${SUIT_NAMES[suit]}，弃掉 ${nonFlushIndices.length} 张杂色牌冲同花`,
-              priorityScore: 2200 + indices.length * 300,
+              priorityScore: indices.length === 4 ? 4200 : 2600,
             });
           }
         }
       }
+
 
       // Strategy B: Discard lowest isolated junk cards
       const junkIndices = cards
@@ -1492,9 +1499,10 @@ export class PokerEvaluator {
           cardIndices: junkIndices,
           cardsSummary: junkIndices.map(i => `${cards[i].value?.rank || '?'}${SUIT_NAMES[cards[i].value?.suit || 'S'] || ''}`).join(' '),
           reason: `【优化牌库】弃掉 ${junkIndices.length} 张低点数孤张杂牌，抽高点数与对子`,
-          priorityScore: 800,
+          priorityScore: 2100 + junkIndices.length * 100,
         });
       }
+
     }
 
     // Sort all candidates

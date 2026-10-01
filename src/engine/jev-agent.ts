@@ -67,17 +67,37 @@ export class JevAgent {
       };
     }
 
-    // 3. Last Hand Remaining (Discards not permitted/pointless, mandatory play best hand!):
+    // 3. Last Hand Remaining (向死而生决策):
+    // If best play CANNOT one-shot the blind AND discards remain: MUST DISCARD!
+    // Playing a non-lethal hand on the last hand when you have discards is guaranteed suicide!
     if ((state.round?.hands_left || 1) <= 1) {
       const bestPlay = candidates.find(c => c.type === 'play') || top;
+      const canKill = bestPlay.estimatedScore !== undefined && bestPlay.estimatedScore >= scoreRemaining;
+
+      if (!canKill && (state.round?.discards_left || 0) > 0) {
+        const bestDiscard = candidates.find(c => c.type === 'discard');
+        if (bestDiscard) {
+          return {
+            action: 'discard',
+            params: { cards: bestDiscard.cardIndices },
+            reason: `[末手向死而生] 剩余仅剩 1 手且当前出牌无法斩杀(${bestPlay.estimatedScore ?? 0}/${scoreRemaining})，果断使用剩余 ${state.round?.discards_left} 次弃牌搏杀逆转: ${bestDiscard.reason}`,
+            confidence: 1.0,
+            source: 'tactical_fast_path',
+          };
+        }
+      }
+
       return {
         action: 'play',
         params: { cards: bestPlay.cardIndices },
-        reason: `[末手绝杀直觉] 剩余出牌仅剩最后 1 次，强制打出最高期望分牌型: ${bestPlay.reason}`,
+        reason: canKill
+          ? `[末手绝杀直觉] 剩余出牌仅剩最后 1 次，打出绝杀牌型通关: ${bestPlay.reason}`
+          : `[末手孤注一掷] 剩余出牌与弃牌耗尽，打出最高期望分牌型: ${bestPlay.reason}`,
         confidence: 1.0,
         source: 'tactical_fast_path',
       };
     }
+
 
     // 4. Only one play candidate available:
     if (candidates.length === 1 && top.type === 'play') {
